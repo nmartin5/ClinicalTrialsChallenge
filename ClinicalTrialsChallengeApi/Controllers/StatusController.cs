@@ -4,7 +4,6 @@ using System.Collections.Generic;
 
 namespace ClinicalTrialsChallengeApi.Controllers
 {
-    // TODO NotificationController
     [ApiController]
     [Route("[controller]")]
     public class StatusController : ControllerBase

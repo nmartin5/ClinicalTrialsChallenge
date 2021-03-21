@@ -7,7 +7,6 @@ namespace ClinicalTrialsChallengeApi.Configuration.Installer
     {
         public static void ConfigureRepositories(this IServiceCollection services)
         {
-            services.AddScoped<IStudyFieldRepository, StudyFieldRepository>();
             services.AddScoped<IFullStudyRepository, FullStudyRepository>();
         }
     }

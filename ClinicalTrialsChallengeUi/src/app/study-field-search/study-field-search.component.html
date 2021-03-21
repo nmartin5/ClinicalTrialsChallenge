@@ -9,7 +9,7 @@
             <div *ngFor="let keyword of keywords.controls; let i=index; let last=last;">
                 <mat-form-field class="partial-width">
                     <mat-label>Search Term:</mat-label>
-                    <input matInput placeholder="heart attack, stroke, etc." [formControlName]="i">
+                    <input matInput placeholder="heart attack, COVID-19, etc." [formControlName]="i">
                 </mat-form-field>
                 <button *ngIf="keywords.length > 1" mat-icon-button (click)="removeKeyword(i)"
                     aria-label="Delete keyword">

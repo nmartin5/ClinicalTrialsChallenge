@@ -1,3 +1,4 @@
+using ClinicalTrialsChallengeApi.Configuration;
 using ClinicalTrialsChallengeApi.Configuration.Installer;
 using ClinicalTrialsChallengeApi.Infrastructure;
 using ClinicalTrialsChallengeApi.Infrastructure.Client;
@@ -27,6 +28,8 @@ namespace ClinicalTrialsChallengeApi
             services.AddHttpClient();
             services.ConfigureRepositories();
             services.AddScoped<IFullStudiesClient, FullStudiesClient>();
+            services.Configure<EmailOptions>(options => Configuration.GetSection(nameof(EmailOptions)).Bind(options));
+            services.AddScoped<ISendEmailService, EmailService>();
 
             services.AddCors(options =>
             {

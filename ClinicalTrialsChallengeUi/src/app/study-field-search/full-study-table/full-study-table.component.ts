@@ -1,9 +1,11 @@
 import { AfterViewInit, Component, ViewChild, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
-import { FullStudyClient, FullStudyViewDto, LocationDto, PaginatedFullStudies, Pagination } from 'src/app/client-lib/client';
+import { FullStudyClient, FullStudyViewDto, LocationDto, PaginatedFullStudies, Pagination, NotificationClient } from 'src/app/client-lib/client';
 import { Observable, of, timer, Scheduler, interval } from 'rxjs';
 import { startWith, switchMap, map, takeUntil, finalize } from 'rxjs/operators';
 import { SearchRequest } from '../search-request';
+import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { ContactRequestComponent } from '../contact-request/contact-request.component';
 
 @Component({
   selector: 'ct-full-study-table',
@@ -22,9 +24,9 @@ export class FullStudyTableComponent implements AfterViewInit {
   filteredAndPagedStudies!: Observable<FullStudyViewDto[]>;
 
   /** Columns displayed in the table. Columns IDs can be added, removed, or reordered. */
-  displayedColumns = ['title', 'organizationName', 'status', 'location'];
+  displayedColumns = ['title', 'organizationName', 'status', 'detail'];
 
-  constructor(private fullStudyClient: FullStudyClient) { }
+  constructor(private fullStudyClient: FullStudyClient, private notificationClient: NotificationClient, public dialog: MatDialog) { }
 
   ngAfterViewInit(): void {
     setTimeout(() => this.refresh());
@@ -74,6 +76,18 @@ export class FullStudyTableComponent implements AfterViewInit {
 
   private searchRequestIsValid(){
     return this.searchRequest && this.searchRequest.keywords.some(k => k.length > 0);
+  }
+
+  showContactModal(study: FullStudyViewDto){
+    const dialogConfig = new MatDialogConfig();
+    dialogConfig.width = "30%";
+    dialogConfig.minWidth = '400px'; 
+    const dialogRef = this.dialog.open(ContactRequestComponent, dialogConfig);
+
+    dialogRef.afterClosed().subscribe(result => {
+      this.notificationClient.notify();
+      console.log(`Dialog result: ${result}`);
+    })
   }
 
   retry(){
