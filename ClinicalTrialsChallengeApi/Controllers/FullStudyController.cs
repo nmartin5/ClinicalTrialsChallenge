@@ -49,19 +49,26 @@ namespace ClinicalTrialsChallengeApi.Controllers
 
         [HttpGet]
         [Route("search")]
-        public async Task<IEnumerable<FullStudyViewDto>> SearchAsync([FromQuery] SearchRequestDto searchRequest)
+        public async Task<ActionResult<PaginatedFullStudies>> SearchAsync([FromQuery] SearchRequestDto searchRequest)
         {
-            var results = await _fullStudyRepository.GetPaginatedFullStudies(searchRequest.PaginationRequest.Skip, searchRequest.PaginationRequest.Take,
-                searchRequest.Keywords, searchRequest.Location, searchRequest.Status, searchRequest.Gender, searchRequest.DateOfBirth);
+            PaginatedFullStudyDto results;
+            try
+            {
+                results = await _fullStudyRepository.GetPaginatedFullStudies(searchRequest.PaginationRequest.Skip, searchRequest.PaginationRequest.Take,
+                    searchRequest.Keywords, searchRequest.Location, searchRequest.Statuses, searchRequest.Gender);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
             if (results is null)
-                return new List<FullStudyViewDto>();
-
-            return results.Select(r => new FullStudyViewDto(r.ProtocolSection.IdentificationModule.NCTId,
+                return new PaginatedFullStudies(new List<FullStudyViewDto>(), new Pagination(searchRequest.PaginationRequest.Skip, searchRequest.PaginationRequest.Take, 0));
+            var studies = results.FullStudies.Select(r => new FullStudyViewDto(r.ProtocolSection.IdentificationModule.NCTId,
                 r.ProtocolSection.IdentificationModule.BriefTitle, r.ProtocolSection.IdentificationModule.Organization.OrgFullName,
-                Enumeration.GetAll<Status>().Single(s => s.Value.Equals(r.ProtocolSection.StatusModule.OverallStatus)),
-                r.ProtocolSection.DescriptionModule.BriefSummary, 
-                r.ProtocolSection.ContactsLocationsModule.LocationList.Location.First()));
+                r.ProtocolSection.StatusModule.OverallStatus, r.ProtocolSection.DescriptionModule.BriefSummary,
+                r.ProtocolSection.ContactsLocationsModule?.LocationList?.Location.FirstOrDefault()));
+            return new PaginatedFullStudies(studies, new Pagination(results.Pagination.Skip, results.Pagination.Take, results.Pagination.TotalItems));
         }
     }
 }

@@ -1,8 +1,11 @@
 ﻿using ClinicalTrialsChallengeApi.Infrastructure.Dto;
+using ClinicalTrialsChallengeApi.Infrastructure.Dto.Response;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ClinicalTrialsChallengeApi.Infrastructure.Client
@@ -14,9 +17,19 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Client
         {
             _httpClient = httpClient;
         }
-        public async Task<IEnumerable<FullStudyDto>> GetFullStudiesAsync(string expression, int minRank, int maxRank)
+        public async Task<PaginatedFullStudyDto> GetFullStudiesAsync(string expression, int skip, int take)
         {
+            var minRank = skip + 1;
+            var maxRank = (minRank + take) - 1;
+
+
             var response = await _httpClient.GetAsync($"https://clinicaltrials.gov/api/query/full_studies?expr={expression}&min_rnk={minRank}&max_rnk={maxRank}&fmt=json");
+
+            if (response.StatusCode.Equals(HttpStatusCode.ServiceUnavailable))
+            {
+                return new PaginatedFullStudyDto(new List<FullStudyDto>(), new Pagination(0, 0, 0));
+            }
+
             response.EnsureSuccessStatusCode();
 
             if (response.Content is object)
@@ -26,7 +39,10 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Client
                 if (httpResult is null || httpResult.FullStudiesResponse.NStudiesReturned == 0)
                     return null;
 
-                return httpResult.FullStudiesResponse.FullStudies.OrderBy(r => r.Rank).Select(s => s.Study);                
+                var studies = httpResult.FullStudiesResponse.FullStudies.OrderBy(r => r.Rank).Select(s => s.Study);
+                var total = httpResult.FullStudiesResponse.NStudiesFound;
+
+                return new PaginatedFullStudyDto(studies, new Pagination(skip, take, total));
             }
             else
             {
@@ -41,6 +57,7 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Client
         private class FullStudiesResponse
         {
             public int NStudiesReturned { get; set; }
+            public int NStudiesFound { get; set; }
             public IEnumerable<RankedFullStudyDto> FullStudies { get; set; }
         }
 

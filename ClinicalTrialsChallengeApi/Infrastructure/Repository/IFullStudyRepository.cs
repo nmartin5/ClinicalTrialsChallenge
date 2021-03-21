@@ -8,7 +8,7 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
     public interface IFullStudyRepository
     {
         Task<FullStudyDto> GetFullStudy(string nctIdentifier);
-        Task<IEnumerable<FullStudyDto>> GetPaginatedFullStudies(int Skip, int Take, IEnumerable<string> keywords,
-            string location = null, string status = null, string gender = null, DateTime? dateOfBirth = null);
+        Task<PaginatedFullStudyDto> GetPaginatedFullStudies(int skip, int take, IEnumerable<string> keywords,
+            string location = null, IEnumerable<string> filterStatuses = null, string gender = null);
     }
 }

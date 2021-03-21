@@ -14,15 +14,10 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
-export interface IFullStudyClient {
-    get(nctIdentifier?: string | null | undefined): Observable<FullStudyDto>;
-    search(paginationRequest_Skip?: number | undefined, paginationRequest_Take?: number | undefined, keywords?: string[] | null | undefined, location?: string | null | undefined, status?: string | null | undefined, gender?: string | null | undefined, dateOfBirth?: Date | null | undefined): Observable<FullStudyViewDto[]>;
-}
-
 @Injectable({
     providedIn: 'root'
 })
-export class FullStudyClient implements IFullStudyClient {
+export class FullStudyClient {
     private http: HttpClient;
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
@@ -32,7 +27,7 @@ export class FullStudyClient implements IFullStudyClient {
         this.baseUrl = baseUrl !== undefined && baseUrl !== null ? baseUrl : "https://localhost:44331";
     }
 
-    get(nctIdentifier?: string | null | undefined): Observable<FullStudyDto> {
+    get(nctIdentifier: string | null | undefined): Observable<FullStudyDto> {
         let url_ = this.baseUrl + "/FullStudy?";
         if (nctIdentifier !== undefined && nctIdentifier !== null)
             url_ += "nctIdentifier=" + encodeURIComponent("" + nctIdentifier) + "&";
@@ -82,7 +77,7 @@ export class FullStudyClient implements IFullStudyClient {
         return _observableOf<FullStudyDto>(<any>null);
     }
 
-    search(paginationRequest_Skip?: number | undefined, paginationRequest_Take?: number | undefined, keywords?: string[] | null | undefined, location?: string | null | undefined, status?: string | null | undefined, gender?: string | null | undefined, dateOfBirth?: Date | null | undefined): Observable<FullStudyViewDto[]> {
+    search(paginationRequest_Skip: number | undefined, paginationRequest_Take: number | undefined, keywords: string[] | null | undefined, location: string | null | undefined, statuses: string[] | null | undefined, gender: string | null | undefined): Observable<PaginatedFullStudies> {
         let url_ = this.baseUrl + "/FullStudy/search?";
         if (paginationRequest_Skip === null)
             throw new Error("The parameter 'paginationRequest_Skip' cannot be null.");
@@ -96,12 +91,10 @@ export class FullStudyClient implements IFullStudyClient {
             keywords && keywords.forEach(item => { url_ += "Keywords=" + encodeURIComponent("" + item) + "&"; });
         if (location !== undefined && location !== null)
             url_ += "Location=" + encodeURIComponent("" + location) + "&";
-        if (status !== undefined && status !== null)
-            url_ += "Status=" + encodeURIComponent("" + status) + "&";
+        if (statuses !== undefined && statuses !== null)
+            statuses && statuses.forEach(item => { url_ += "Statuses=" + encodeURIComponent("" + item) + "&"; });
         if (gender !== undefined && gender !== null)
             url_ += "Gender=" + encodeURIComponent("" + gender) + "&";
-        if (dateOfBirth !== undefined && dateOfBirth !== null)
-            url_ += "DateOfBirth=" + encodeURIComponent(dateOfBirth ? "" + dateOfBirth.toJSON() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -119,14 +112,14 @@ export class FullStudyClient implements IFullStudyClient {
                 try {
                     return this.processSearch(<any>response_);
                 } catch (e) {
-                    return <Observable<FullStudyViewDto[]>><any>_observableThrow(e);
+                    return <Observable<PaginatedFullStudies>><any>_observableThrow(e);
                 }
             } else
-                return <Observable<FullStudyViewDto[]>><any>_observableThrow(response_);
+                return <Observable<PaginatedFullStudies>><any>_observableThrow(response_);
         }));
     }
 
-    protected processSearch(response: HttpResponseBase): Observable<FullStudyViewDto[]> {
+    protected processSearch(response: HttpResponseBase): Observable<PaginatedFullStudies> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -137,11 +130,7 @@ export class FullStudyClient implements IFullStudyClient {
             return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            if (Array.isArray(resultData200)) {
-                result200 = [] as any;
-                for (let item of resultData200)
-                    result200!.push(FullStudyViewDto.fromJS(item));
-            }
+            result200 = PaginatedFullStudies.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -149,18 +138,14 @@ export class FullStudyClient implements IFullStudyClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             }));
         }
-        return _observableOf<FullStudyViewDto[]>(<any>null);
+        return _observableOf<PaginatedFullStudies>(<any>null);
     }
-}
-
-export interface IStatusClient {
-    getStatuses(): Observable<Status[]>;
 }
 
 @Injectable({
     providedIn: 'root'
 })
-export class StatusClient implements IStatusClient {
+export class StatusClient {
     private http: HttpClient;
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
@@ -224,8 +209,8 @@ export class StatusClient implements IStatusClient {
 }
 
 export class FullStudyDto implements IFullStudyDto {
-    protocolSection?: ProtocolsectionDto | null;
-    derivedSection?: DerivedsectionDto | null;
+    protocolSection?: ProtocolsectionDto | undefined;
+    derivedSection?: DerivedsectionDto | undefined;
 
     constructor(data?: IFullStudyDto) {
         if (data) {
@@ -238,8 +223,8 @@ export class FullStudyDto implements IFullStudyDto {
 
     init(_data?: any) {
         if (_data) {
-            this.protocolSection = _data["protocolSection"] ? ProtocolsectionDto.fromJS(_data["protocolSection"]) : <any>null;
-            this.derivedSection = _data["derivedSection"] ? DerivedsectionDto.fromJS(_data["derivedSection"]) : <any>null;
+            this.protocolSection = _data["protocolSection"] ? ProtocolsectionDto.fromJS(_data["protocolSection"]) : <any>undefined;
+            this.derivedSection = _data["derivedSection"] ? DerivedsectionDto.fromJS(_data["derivedSection"]) : <any>undefined;
         }
     }
 
@@ -252,30 +237,30 @@ export class FullStudyDto implements IFullStudyDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["protocolSection"] = this.protocolSection ? this.protocolSection.toJSON() : <any>null;
-        data["derivedSection"] = this.derivedSection ? this.derivedSection.toJSON() : <any>null;
+        data["protocolSection"] = this.protocolSection ? this.protocolSection.toJSON() : <any>undefined;
+        data["derivedSection"] = this.derivedSection ? this.derivedSection.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IFullStudyDto {
-    protocolSection?: ProtocolsectionDto | null;
-    derivedSection?: DerivedsectionDto | null;
+    protocolSection?: ProtocolsectionDto | undefined;
+    derivedSection?: DerivedsectionDto | undefined;
 }
 
 export class ProtocolsectionDto implements IProtocolsectionDto {
-    identificationModule?: IdentificationmoduleDto | null;
-    statusModule?: StatusmoduleDto | null;
-    sponsorCollaboratorsModule?: SponsorcollaboratorsmoduleDto | null;
-    oversightModule?: OversightmoduleDto | null;
-    descriptionModule?: DescriptionmoduleDto | null;
-    conditionsModule?: ConditionsmoduleDto | null;
-    designModule?: DesignmoduleDto | null;
-    armsInterventionsModule?: ArmsinterventionsmoduleDto | null;
-    outcomesModule?: OutcomesmoduleDto | null;
-    eligibilityModule?: EligibilitymoduleDto | null;
-    contactsLocationsModule?: ContactslocationsmoduleDto | null;
-    referencesModule?: ReferencesmoduleDto | null;
+    identificationModule?: IdentificationmoduleDto | undefined;
+    statusModule?: StatusmoduleDto | undefined;
+    sponsorCollaboratorsModule?: SponsorcollaboratorsmoduleDto | undefined;
+    oversightModule?: OversightmoduleDto | undefined;
+    descriptionModule?: DescriptionmoduleDto | undefined;
+    conditionsModule?: ConditionsmoduleDto | undefined;
+    designModule?: DesignmoduleDto | undefined;
+    armsInterventionsModule?: ArmsinterventionsmoduleDto | undefined;
+    outcomesModule?: OutcomesmoduleDto | undefined;
+    eligibilityModule?: EligibilitymoduleDto | undefined;
+    contactsLocationsModule?: ContactslocationsmoduleDto | undefined;
+    referencesModule?: ReferencesmoduleDto | undefined;
 
     constructor(data?: IProtocolsectionDto) {
         if (data) {
@@ -288,18 +273,18 @@ export class ProtocolsectionDto implements IProtocolsectionDto {
 
     init(_data?: any) {
         if (_data) {
-            this.identificationModule = _data["identificationModule"] ? IdentificationmoduleDto.fromJS(_data["identificationModule"]) : <any>null;
-            this.statusModule = _data["statusModule"] ? StatusmoduleDto.fromJS(_data["statusModule"]) : <any>null;
-            this.sponsorCollaboratorsModule = _data["sponsorCollaboratorsModule"] ? SponsorcollaboratorsmoduleDto.fromJS(_data["sponsorCollaboratorsModule"]) : <any>null;
-            this.oversightModule = _data["oversightModule"] ? OversightmoduleDto.fromJS(_data["oversightModule"]) : <any>null;
-            this.descriptionModule = _data["descriptionModule"] ? DescriptionmoduleDto.fromJS(_data["descriptionModule"]) : <any>null;
-            this.conditionsModule = _data["conditionsModule"] ? ConditionsmoduleDto.fromJS(_data["conditionsModule"]) : <any>null;
-            this.designModule = _data["designModule"] ? DesignmoduleDto.fromJS(_data["designModule"]) : <any>null;
-            this.armsInterventionsModule = _data["armsInterventionsModule"] ? ArmsinterventionsmoduleDto.fromJS(_data["armsInterventionsModule"]) : <any>null;
-            this.outcomesModule = _data["outcomesModule"] ? OutcomesmoduleDto.fromJS(_data["outcomesModule"]) : <any>null;
-            this.eligibilityModule = _data["eligibilityModule"] ? EligibilitymoduleDto.fromJS(_data["eligibilityModule"]) : <any>null;
-            this.contactsLocationsModule = _data["contactsLocationsModule"] ? ContactslocationsmoduleDto.fromJS(_data["contactsLocationsModule"]) : <any>null;
-            this.referencesModule = _data["referencesModule"] ? ReferencesmoduleDto.fromJS(_data["referencesModule"]) : <any>null;
+            this.identificationModule = _data["identificationModule"] ? IdentificationmoduleDto.fromJS(_data["identificationModule"]) : <any>undefined;
+            this.statusModule = _data["statusModule"] ? StatusmoduleDto.fromJS(_data["statusModule"]) : <any>undefined;
+            this.sponsorCollaboratorsModule = _data["sponsorCollaboratorsModule"] ? SponsorcollaboratorsmoduleDto.fromJS(_data["sponsorCollaboratorsModule"]) : <any>undefined;
+            this.oversightModule = _data["oversightModule"] ? OversightmoduleDto.fromJS(_data["oversightModule"]) : <any>undefined;
+            this.descriptionModule = _data["descriptionModule"] ? DescriptionmoduleDto.fromJS(_data["descriptionModule"]) : <any>undefined;
+            this.conditionsModule = _data["conditionsModule"] ? ConditionsmoduleDto.fromJS(_data["conditionsModule"]) : <any>undefined;
+            this.designModule = _data["designModule"] ? DesignmoduleDto.fromJS(_data["designModule"]) : <any>undefined;
+            this.armsInterventionsModule = _data["armsInterventionsModule"] ? ArmsinterventionsmoduleDto.fromJS(_data["armsInterventionsModule"]) : <any>undefined;
+            this.outcomesModule = _data["outcomesModule"] ? OutcomesmoduleDto.fromJS(_data["outcomesModule"]) : <any>undefined;
+            this.eligibilityModule = _data["eligibilityModule"] ? EligibilitymoduleDto.fromJS(_data["eligibilityModule"]) : <any>undefined;
+            this.contactsLocationsModule = _data["contactsLocationsModule"] ? ContactslocationsmoduleDto.fromJS(_data["contactsLocationsModule"]) : <any>undefined;
+            this.referencesModule = _data["referencesModule"] ? ReferencesmoduleDto.fromJS(_data["referencesModule"]) : <any>undefined;
         }
     }
 
@@ -312,45 +297,45 @@ export class ProtocolsectionDto implements IProtocolsectionDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["identificationModule"] = this.identificationModule ? this.identificationModule.toJSON() : <any>null;
-        data["statusModule"] = this.statusModule ? this.statusModule.toJSON() : <any>null;
-        data["sponsorCollaboratorsModule"] = this.sponsorCollaboratorsModule ? this.sponsorCollaboratorsModule.toJSON() : <any>null;
-        data["oversightModule"] = this.oversightModule ? this.oversightModule.toJSON() : <any>null;
-        data["descriptionModule"] = this.descriptionModule ? this.descriptionModule.toJSON() : <any>null;
-        data["conditionsModule"] = this.conditionsModule ? this.conditionsModule.toJSON() : <any>null;
-        data["designModule"] = this.designModule ? this.designModule.toJSON() : <any>null;
-        data["armsInterventionsModule"] = this.armsInterventionsModule ? this.armsInterventionsModule.toJSON() : <any>null;
-        data["outcomesModule"] = this.outcomesModule ? this.outcomesModule.toJSON() : <any>null;
-        data["eligibilityModule"] = this.eligibilityModule ? this.eligibilityModule.toJSON() : <any>null;
-        data["contactsLocationsModule"] = this.contactsLocationsModule ? this.contactsLocationsModule.toJSON() : <any>null;
-        data["referencesModule"] = this.referencesModule ? this.referencesModule.toJSON() : <any>null;
+        data["identificationModule"] = this.identificationModule ? this.identificationModule.toJSON() : <any>undefined;
+        data["statusModule"] = this.statusModule ? this.statusModule.toJSON() : <any>undefined;
+        data["sponsorCollaboratorsModule"] = this.sponsorCollaboratorsModule ? this.sponsorCollaboratorsModule.toJSON() : <any>undefined;
+        data["oversightModule"] = this.oversightModule ? this.oversightModule.toJSON() : <any>undefined;
+        data["descriptionModule"] = this.descriptionModule ? this.descriptionModule.toJSON() : <any>undefined;
+        data["conditionsModule"] = this.conditionsModule ? this.conditionsModule.toJSON() : <any>undefined;
+        data["designModule"] = this.designModule ? this.designModule.toJSON() : <any>undefined;
+        data["armsInterventionsModule"] = this.armsInterventionsModule ? this.armsInterventionsModule.toJSON() : <any>undefined;
+        data["outcomesModule"] = this.outcomesModule ? this.outcomesModule.toJSON() : <any>undefined;
+        data["eligibilityModule"] = this.eligibilityModule ? this.eligibilityModule.toJSON() : <any>undefined;
+        data["contactsLocationsModule"] = this.contactsLocationsModule ? this.contactsLocationsModule.toJSON() : <any>undefined;
+        data["referencesModule"] = this.referencesModule ? this.referencesModule.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IProtocolsectionDto {
-    identificationModule?: IdentificationmoduleDto | null;
-    statusModule?: StatusmoduleDto | null;
-    sponsorCollaboratorsModule?: SponsorcollaboratorsmoduleDto | null;
-    oversightModule?: OversightmoduleDto | null;
-    descriptionModule?: DescriptionmoduleDto | null;
-    conditionsModule?: ConditionsmoduleDto | null;
-    designModule?: DesignmoduleDto | null;
-    armsInterventionsModule?: ArmsinterventionsmoduleDto | null;
-    outcomesModule?: OutcomesmoduleDto | null;
-    eligibilityModule?: EligibilitymoduleDto | null;
-    contactsLocationsModule?: ContactslocationsmoduleDto | null;
-    referencesModule?: ReferencesmoduleDto | null;
+    identificationModule?: IdentificationmoduleDto | undefined;
+    statusModule?: StatusmoduleDto | undefined;
+    sponsorCollaboratorsModule?: SponsorcollaboratorsmoduleDto | undefined;
+    oversightModule?: OversightmoduleDto | undefined;
+    descriptionModule?: DescriptionmoduleDto | undefined;
+    conditionsModule?: ConditionsmoduleDto | undefined;
+    designModule?: DesignmoduleDto | undefined;
+    armsInterventionsModule?: ArmsinterventionsmoduleDto | undefined;
+    outcomesModule?: OutcomesmoduleDto | undefined;
+    eligibilityModule?: EligibilitymoduleDto | undefined;
+    contactsLocationsModule?: ContactslocationsmoduleDto | undefined;
+    referencesModule?: ReferencesmoduleDto | undefined;
 }
 
 export class IdentificationmoduleDto implements IIdentificationmoduleDto {
-    nctId?: string | null;
-    orgStudyIdInfo?: OrgstudyidinfoDto | null;
-    secondaryIdInfoList?: SecondaryidinfolistDto | null;
-    organization?: OrganizationDto | null;
-    briefTitle?: string | null;
-    officialTitle?: string | null;
-    acronym?: string | null;
+    nctId?: string | undefined;
+    orgStudyIdInfo?: OrgstudyidinfoDto | undefined;
+    secondaryIdInfoList?: SecondaryidinfolistDto | undefined;
+    organization?: OrganizationDto | undefined;
+    briefTitle?: string | undefined;
+    officialTitle?: string | undefined;
+    acronym?: string | undefined;
 
     constructor(data?: IIdentificationmoduleDto) {
         if (data) {
@@ -363,13 +348,13 @@ export class IdentificationmoduleDto implements IIdentificationmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.nctId = _data["nctId"] !== undefined ? _data["nctId"] : <any>null;
-            this.orgStudyIdInfo = _data["orgStudyIdInfo"] ? OrgstudyidinfoDto.fromJS(_data["orgStudyIdInfo"]) : <any>null;
-            this.secondaryIdInfoList = _data["secondaryIdInfoList"] ? SecondaryidinfolistDto.fromJS(_data["secondaryIdInfoList"]) : <any>null;
-            this.organization = _data["organization"] ? OrganizationDto.fromJS(_data["organization"]) : <any>null;
-            this.briefTitle = _data["briefTitle"] !== undefined ? _data["briefTitle"] : <any>null;
-            this.officialTitle = _data["officialTitle"] !== undefined ? _data["officialTitle"] : <any>null;
-            this.acronym = _data["acronym"] !== undefined ? _data["acronym"] : <any>null;
+            this.nctId = _data["nctId"];
+            this.orgStudyIdInfo = _data["orgStudyIdInfo"] ? OrgstudyidinfoDto.fromJS(_data["orgStudyIdInfo"]) : <any>undefined;
+            this.secondaryIdInfoList = _data["secondaryIdInfoList"] ? SecondaryidinfolistDto.fromJS(_data["secondaryIdInfoList"]) : <any>undefined;
+            this.organization = _data["organization"] ? OrganizationDto.fromJS(_data["organization"]) : <any>undefined;
+            this.briefTitle = _data["briefTitle"];
+            this.officialTitle = _data["officialTitle"];
+            this.acronym = _data["acronym"];
         }
     }
 
@@ -382,29 +367,29 @@ export class IdentificationmoduleDto implements IIdentificationmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["nctId"] = this.nctId !== undefined ? this.nctId : <any>null;
-        data["orgStudyIdInfo"] = this.orgStudyIdInfo ? this.orgStudyIdInfo.toJSON() : <any>null;
-        data["secondaryIdInfoList"] = this.secondaryIdInfoList ? this.secondaryIdInfoList.toJSON() : <any>null;
-        data["organization"] = this.organization ? this.organization.toJSON() : <any>null;
-        data["briefTitle"] = this.briefTitle !== undefined ? this.briefTitle : <any>null;
-        data["officialTitle"] = this.officialTitle !== undefined ? this.officialTitle : <any>null;
-        data["acronym"] = this.acronym !== undefined ? this.acronym : <any>null;
+        data["nctId"] = this.nctId;
+        data["orgStudyIdInfo"] = this.orgStudyIdInfo ? this.orgStudyIdInfo.toJSON() : <any>undefined;
+        data["secondaryIdInfoList"] = this.secondaryIdInfoList ? this.secondaryIdInfoList.toJSON() : <any>undefined;
+        data["organization"] = this.organization ? this.organization.toJSON() : <any>undefined;
+        data["briefTitle"] = this.briefTitle;
+        data["officialTitle"] = this.officialTitle;
+        data["acronym"] = this.acronym;
         return data; 
     }
 }
 
 export interface IIdentificationmoduleDto {
-    nctId?: string | null;
-    orgStudyIdInfo?: OrgstudyidinfoDto | null;
-    secondaryIdInfoList?: SecondaryidinfolistDto | null;
-    organization?: OrganizationDto | null;
-    briefTitle?: string | null;
-    officialTitle?: string | null;
-    acronym?: string | null;
+    nctId?: string | undefined;
+    orgStudyIdInfo?: OrgstudyidinfoDto | undefined;
+    secondaryIdInfoList?: SecondaryidinfolistDto | undefined;
+    organization?: OrganizationDto | undefined;
+    briefTitle?: string | undefined;
+    officialTitle?: string | undefined;
+    acronym?: string | undefined;
 }
 
 export class OrgstudyidinfoDto implements IOrgstudyidinfoDto {
-    orgStudyId?: string | null;
+    orgStudyId?: string | undefined;
 
     constructor(data?: IOrgstudyidinfoDto) {
         if (data) {
@@ -417,7 +402,7 @@ export class OrgstudyidinfoDto implements IOrgstudyidinfoDto {
 
     init(_data?: any) {
         if (_data) {
-            this.orgStudyId = _data["orgStudyId"] !== undefined ? _data["orgStudyId"] : <any>null;
+            this.orgStudyId = _data["orgStudyId"];
         }
     }
 
@@ -430,17 +415,17 @@ export class OrgstudyidinfoDto implements IOrgstudyidinfoDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["orgStudyId"] = this.orgStudyId !== undefined ? this.orgStudyId : <any>null;
+        data["orgStudyId"] = this.orgStudyId;
         return data; 
     }
 }
 
 export interface IOrgstudyidinfoDto {
-    orgStudyId?: string | null;
+    orgStudyId?: string | undefined;
 }
 
 export class SecondaryidinfolistDto implements ISecondaryidinfolistDto {
-    secondaryIdInfo?: SecondaryidinfoDto[] | null;
+    secondaryIdInfo?: SecondaryidinfoDto[] | undefined;
 
     constructor(data?: ISecondaryidinfolistDto) {
         if (data) {
@@ -480,13 +465,13 @@ export class SecondaryidinfolistDto implements ISecondaryidinfolistDto {
 }
 
 export interface ISecondaryidinfolistDto {
-    secondaryIdInfo?: SecondaryidinfoDto[] | null;
+    secondaryIdInfo?: SecondaryidinfoDto[] | undefined;
 }
 
 export class SecondaryidinfoDto implements ISecondaryidinfoDto {
-    secondaryId?: string | null;
-    secondaryIdType?: string | null;
-    secondaryIdDomain?: string | null;
+    secondaryId?: string | undefined;
+    secondaryIdType?: string | undefined;
+    secondaryIdDomain?: string | undefined;
 
     constructor(data?: ISecondaryidinfoDto) {
         if (data) {
@@ -499,9 +484,9 @@ export class SecondaryidinfoDto implements ISecondaryidinfoDto {
 
     init(_data?: any) {
         if (_data) {
-            this.secondaryId = _data["secondaryId"] !== undefined ? _data["secondaryId"] : <any>null;
-            this.secondaryIdType = _data["secondaryIdType"] !== undefined ? _data["secondaryIdType"] : <any>null;
-            this.secondaryIdDomain = _data["secondaryIdDomain"] !== undefined ? _data["secondaryIdDomain"] : <any>null;
+            this.secondaryId = _data["secondaryId"];
+            this.secondaryIdType = _data["secondaryIdType"];
+            this.secondaryIdDomain = _data["secondaryIdDomain"];
         }
     }
 
@@ -514,22 +499,22 @@ export class SecondaryidinfoDto implements ISecondaryidinfoDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["secondaryId"] = this.secondaryId !== undefined ? this.secondaryId : <any>null;
-        data["secondaryIdType"] = this.secondaryIdType !== undefined ? this.secondaryIdType : <any>null;
-        data["secondaryIdDomain"] = this.secondaryIdDomain !== undefined ? this.secondaryIdDomain : <any>null;
+        data["secondaryId"] = this.secondaryId;
+        data["secondaryIdType"] = this.secondaryIdType;
+        data["secondaryIdDomain"] = this.secondaryIdDomain;
         return data; 
     }
 }
 
 export interface ISecondaryidinfoDto {
-    secondaryId?: string | null;
-    secondaryIdType?: string | null;
-    secondaryIdDomain?: string | null;
+    secondaryId?: string | undefined;
+    secondaryIdType?: string | undefined;
+    secondaryIdDomain?: string | undefined;
 }
 
 export class OrganizationDto implements IOrganizationDto {
-    orgFullName?: string | null;
-    orgClass?: string | null;
+    orgFullName?: string | undefined;
+    orgClass?: string | undefined;
 
     constructor(data?: IOrganizationDto) {
         if (data) {
@@ -542,8 +527,8 @@ export class OrganizationDto implements IOrganizationDto {
 
     init(_data?: any) {
         if (_data) {
-            this.orgFullName = _data["orgFullName"] !== undefined ? _data["orgFullName"] : <any>null;
-            this.orgClass = _data["orgClass"] !== undefined ? _data["orgClass"] : <any>null;
+            this.orgFullName = _data["orgFullName"];
+            this.orgClass = _data["orgClass"];
         }
     }
 
@@ -556,29 +541,29 @@ export class OrganizationDto implements IOrganizationDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["orgFullName"] = this.orgFullName !== undefined ? this.orgFullName : <any>null;
-        data["orgClass"] = this.orgClass !== undefined ? this.orgClass : <any>null;
+        data["orgFullName"] = this.orgFullName;
+        data["orgClass"] = this.orgClass;
         return data; 
     }
 }
 
 export interface IOrganizationDto {
-    orgFullName?: string | null;
-    orgClass?: string | null;
+    orgFullName?: string | undefined;
+    orgClass?: string | undefined;
 }
 
 export class StatusmoduleDto implements IStatusmoduleDto {
-    statusVerifiedDate?: string | null;
-    overallStatus?: string | null;
-    expandedAccessInfo?: ExpandedaccessinfoDto | null;
-    startDateStruct?: StartdatestructDto | null;
-    primaryCompletionDateStruct?: PrimarycompletiondatestructDto | null;
-    completionDateStruct?: CompletiondatestructDto | null;
-    studyFirstSubmitDate?: string | null;
-    studyFirstSubmitQCDate?: string | null;
-    studyFirstPostDateStruct?: StudyfirstpostdatestructDto | null;
-    lastUpdateSubmitDate?: string | null;
-    lastUpdatePostDateStruct?: LastupdatepostdatestructDto | null;
+    statusVerifiedDate?: string | undefined;
+    overallStatus?: string | undefined;
+    expandedAccessInfo?: ExpandedaccessinfoDto | undefined;
+    startDateStruct?: StartdatestructDto | undefined;
+    primaryCompletionDateStruct?: PrimarycompletiondatestructDto | undefined;
+    completionDateStruct?: CompletiondatestructDto | undefined;
+    studyFirstSubmitDate?: string | undefined;
+    studyFirstSubmitQCDate?: string | undefined;
+    studyFirstPostDateStruct?: StudyfirstpostdatestructDto | undefined;
+    lastUpdateSubmitDate?: string | undefined;
+    lastUpdatePostDateStruct?: LastupdatepostdatestructDto | undefined;
 
     constructor(data?: IStatusmoduleDto) {
         if (data) {
@@ -591,17 +576,17 @@ export class StatusmoduleDto implements IStatusmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.statusVerifiedDate = _data["statusVerifiedDate"] !== undefined ? _data["statusVerifiedDate"] : <any>null;
-            this.overallStatus = _data["overallStatus"] !== undefined ? _data["overallStatus"] : <any>null;
-            this.expandedAccessInfo = _data["expandedAccessInfo"] ? ExpandedaccessinfoDto.fromJS(_data["expandedAccessInfo"]) : <any>null;
-            this.startDateStruct = _data["startDateStruct"] ? StartdatestructDto.fromJS(_data["startDateStruct"]) : <any>null;
-            this.primaryCompletionDateStruct = _data["primaryCompletionDateStruct"] ? PrimarycompletiondatestructDto.fromJS(_data["primaryCompletionDateStruct"]) : <any>null;
-            this.completionDateStruct = _data["completionDateStruct"] ? CompletiondatestructDto.fromJS(_data["completionDateStruct"]) : <any>null;
-            this.studyFirstSubmitDate = _data["studyFirstSubmitDate"] !== undefined ? _data["studyFirstSubmitDate"] : <any>null;
-            this.studyFirstSubmitQCDate = _data["studyFirstSubmitQCDate"] !== undefined ? _data["studyFirstSubmitQCDate"] : <any>null;
-            this.studyFirstPostDateStruct = _data["studyFirstPostDateStruct"] ? StudyfirstpostdatestructDto.fromJS(_data["studyFirstPostDateStruct"]) : <any>null;
-            this.lastUpdateSubmitDate = _data["lastUpdateSubmitDate"] !== undefined ? _data["lastUpdateSubmitDate"] : <any>null;
-            this.lastUpdatePostDateStruct = _data["lastUpdatePostDateStruct"] ? LastupdatepostdatestructDto.fromJS(_data["lastUpdatePostDateStruct"]) : <any>null;
+            this.statusVerifiedDate = _data["statusVerifiedDate"];
+            this.overallStatus = _data["overallStatus"];
+            this.expandedAccessInfo = _data["expandedAccessInfo"] ? ExpandedaccessinfoDto.fromJS(_data["expandedAccessInfo"]) : <any>undefined;
+            this.startDateStruct = _data["startDateStruct"] ? StartdatestructDto.fromJS(_data["startDateStruct"]) : <any>undefined;
+            this.primaryCompletionDateStruct = _data["primaryCompletionDateStruct"] ? PrimarycompletiondatestructDto.fromJS(_data["primaryCompletionDateStruct"]) : <any>undefined;
+            this.completionDateStruct = _data["completionDateStruct"] ? CompletiondatestructDto.fromJS(_data["completionDateStruct"]) : <any>undefined;
+            this.studyFirstSubmitDate = _data["studyFirstSubmitDate"];
+            this.studyFirstSubmitQCDate = _data["studyFirstSubmitQCDate"];
+            this.studyFirstPostDateStruct = _data["studyFirstPostDateStruct"] ? StudyfirstpostdatestructDto.fromJS(_data["studyFirstPostDateStruct"]) : <any>undefined;
+            this.lastUpdateSubmitDate = _data["lastUpdateSubmitDate"];
+            this.lastUpdatePostDateStruct = _data["lastUpdatePostDateStruct"] ? LastupdatepostdatestructDto.fromJS(_data["lastUpdatePostDateStruct"]) : <any>undefined;
         }
     }
 
@@ -614,37 +599,37 @@ export class StatusmoduleDto implements IStatusmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["statusVerifiedDate"] = this.statusVerifiedDate !== undefined ? this.statusVerifiedDate : <any>null;
-        data["overallStatus"] = this.overallStatus !== undefined ? this.overallStatus : <any>null;
-        data["expandedAccessInfo"] = this.expandedAccessInfo ? this.expandedAccessInfo.toJSON() : <any>null;
-        data["startDateStruct"] = this.startDateStruct ? this.startDateStruct.toJSON() : <any>null;
-        data["primaryCompletionDateStruct"] = this.primaryCompletionDateStruct ? this.primaryCompletionDateStruct.toJSON() : <any>null;
-        data["completionDateStruct"] = this.completionDateStruct ? this.completionDateStruct.toJSON() : <any>null;
-        data["studyFirstSubmitDate"] = this.studyFirstSubmitDate !== undefined ? this.studyFirstSubmitDate : <any>null;
-        data["studyFirstSubmitQCDate"] = this.studyFirstSubmitQCDate !== undefined ? this.studyFirstSubmitQCDate : <any>null;
-        data["studyFirstPostDateStruct"] = this.studyFirstPostDateStruct ? this.studyFirstPostDateStruct.toJSON() : <any>null;
-        data["lastUpdateSubmitDate"] = this.lastUpdateSubmitDate !== undefined ? this.lastUpdateSubmitDate : <any>null;
-        data["lastUpdatePostDateStruct"] = this.lastUpdatePostDateStruct ? this.lastUpdatePostDateStruct.toJSON() : <any>null;
+        data["statusVerifiedDate"] = this.statusVerifiedDate;
+        data["overallStatus"] = this.overallStatus;
+        data["expandedAccessInfo"] = this.expandedAccessInfo ? this.expandedAccessInfo.toJSON() : <any>undefined;
+        data["startDateStruct"] = this.startDateStruct ? this.startDateStruct.toJSON() : <any>undefined;
+        data["primaryCompletionDateStruct"] = this.primaryCompletionDateStruct ? this.primaryCompletionDateStruct.toJSON() : <any>undefined;
+        data["completionDateStruct"] = this.completionDateStruct ? this.completionDateStruct.toJSON() : <any>undefined;
+        data["studyFirstSubmitDate"] = this.studyFirstSubmitDate;
+        data["studyFirstSubmitQCDate"] = this.studyFirstSubmitQCDate;
+        data["studyFirstPostDateStruct"] = this.studyFirstPostDateStruct ? this.studyFirstPostDateStruct.toJSON() : <any>undefined;
+        data["lastUpdateSubmitDate"] = this.lastUpdateSubmitDate;
+        data["lastUpdatePostDateStruct"] = this.lastUpdatePostDateStruct ? this.lastUpdatePostDateStruct.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IStatusmoduleDto {
-    statusVerifiedDate?: string | null;
-    overallStatus?: string | null;
-    expandedAccessInfo?: ExpandedaccessinfoDto | null;
-    startDateStruct?: StartdatestructDto | null;
-    primaryCompletionDateStruct?: PrimarycompletiondatestructDto | null;
-    completionDateStruct?: CompletiondatestructDto | null;
-    studyFirstSubmitDate?: string | null;
-    studyFirstSubmitQCDate?: string | null;
-    studyFirstPostDateStruct?: StudyfirstpostdatestructDto | null;
-    lastUpdateSubmitDate?: string | null;
-    lastUpdatePostDateStruct?: LastupdatepostdatestructDto | null;
+    statusVerifiedDate?: string | undefined;
+    overallStatus?: string | undefined;
+    expandedAccessInfo?: ExpandedaccessinfoDto | undefined;
+    startDateStruct?: StartdatestructDto | undefined;
+    primaryCompletionDateStruct?: PrimarycompletiondatestructDto | undefined;
+    completionDateStruct?: CompletiondatestructDto | undefined;
+    studyFirstSubmitDate?: string | undefined;
+    studyFirstSubmitQCDate?: string | undefined;
+    studyFirstPostDateStruct?: StudyfirstpostdatestructDto | undefined;
+    lastUpdateSubmitDate?: string | undefined;
+    lastUpdatePostDateStruct?: LastupdatepostdatestructDto | undefined;
 }
 
 export class ExpandedaccessinfoDto implements IExpandedaccessinfoDto {
-    hasExpandedAccess?: string | null;
+    hasExpandedAccess?: string | undefined;
 
     constructor(data?: IExpandedaccessinfoDto) {
         if (data) {
@@ -657,7 +642,7 @@ export class ExpandedaccessinfoDto implements IExpandedaccessinfoDto {
 
     init(_data?: any) {
         if (_data) {
-            this.hasExpandedAccess = _data["hasExpandedAccess"] !== undefined ? _data["hasExpandedAccess"] : <any>null;
+            this.hasExpandedAccess = _data["hasExpandedAccess"];
         }
     }
 
@@ -670,18 +655,18 @@ export class ExpandedaccessinfoDto implements IExpandedaccessinfoDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["hasExpandedAccess"] = this.hasExpandedAccess !== undefined ? this.hasExpandedAccess : <any>null;
+        data["hasExpandedAccess"] = this.hasExpandedAccess;
         return data; 
     }
 }
 
 export interface IExpandedaccessinfoDto {
-    hasExpandedAccess?: string | null;
+    hasExpandedAccess?: string | undefined;
 }
 
 export class StartdatestructDto implements IStartdatestructDto {
-    startDate?: string | null;
-    startDateType?: string | null;
+    startDate?: string | undefined;
+    startDateType?: string | undefined;
 
     constructor(data?: IStartdatestructDto) {
         if (data) {
@@ -694,8 +679,8 @@ export class StartdatestructDto implements IStartdatestructDto {
 
     init(_data?: any) {
         if (_data) {
-            this.startDate = _data["startDate"] !== undefined ? _data["startDate"] : <any>null;
-            this.startDateType = _data["startDateType"] !== undefined ? _data["startDateType"] : <any>null;
+            this.startDate = _data["startDate"];
+            this.startDateType = _data["startDateType"];
         }
     }
 
@@ -708,20 +693,20 @@ export class StartdatestructDto implements IStartdatestructDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["startDate"] = this.startDate !== undefined ? this.startDate : <any>null;
-        data["startDateType"] = this.startDateType !== undefined ? this.startDateType : <any>null;
+        data["startDate"] = this.startDate;
+        data["startDateType"] = this.startDateType;
         return data; 
     }
 }
 
 export interface IStartdatestructDto {
-    startDate?: string | null;
-    startDateType?: string | null;
+    startDate?: string | undefined;
+    startDateType?: string | undefined;
 }
 
 export class PrimarycompletiondatestructDto implements IPrimarycompletiondatestructDto {
-    primaryCompletionDate?: string | null;
-    primaryCompletionDateType?: string | null;
+    primaryCompletionDate?: string | undefined;
+    primaryCompletionDateType?: string | undefined;
 
     constructor(data?: IPrimarycompletiondatestructDto) {
         if (data) {
@@ -734,8 +719,8 @@ export class PrimarycompletiondatestructDto implements IPrimarycompletiondatestr
 
     init(_data?: any) {
         if (_data) {
-            this.primaryCompletionDate = _data["primaryCompletionDate"] !== undefined ? _data["primaryCompletionDate"] : <any>null;
-            this.primaryCompletionDateType = _data["primaryCompletionDateType"] !== undefined ? _data["primaryCompletionDateType"] : <any>null;
+            this.primaryCompletionDate = _data["primaryCompletionDate"];
+            this.primaryCompletionDateType = _data["primaryCompletionDateType"];
         }
     }
 
@@ -748,20 +733,20 @@ export class PrimarycompletiondatestructDto implements IPrimarycompletiondatestr
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["primaryCompletionDate"] = this.primaryCompletionDate !== undefined ? this.primaryCompletionDate : <any>null;
-        data["primaryCompletionDateType"] = this.primaryCompletionDateType !== undefined ? this.primaryCompletionDateType : <any>null;
+        data["primaryCompletionDate"] = this.primaryCompletionDate;
+        data["primaryCompletionDateType"] = this.primaryCompletionDateType;
         return data; 
     }
 }
 
 export interface IPrimarycompletiondatestructDto {
-    primaryCompletionDate?: string | null;
-    primaryCompletionDateType?: string | null;
+    primaryCompletionDate?: string | undefined;
+    primaryCompletionDateType?: string | undefined;
 }
 
 export class CompletiondatestructDto implements ICompletiondatestructDto {
-    completionDate?: string | null;
-    completionDateType?: string | null;
+    completionDate?: string | undefined;
+    completionDateType?: string | undefined;
 
     constructor(data?: ICompletiondatestructDto) {
         if (data) {
@@ -774,8 +759,8 @@ export class CompletiondatestructDto implements ICompletiondatestructDto {
 
     init(_data?: any) {
         if (_data) {
-            this.completionDate = _data["completionDate"] !== undefined ? _data["completionDate"] : <any>null;
-            this.completionDateType = _data["completionDateType"] !== undefined ? _data["completionDateType"] : <any>null;
+            this.completionDate = _data["completionDate"];
+            this.completionDateType = _data["completionDateType"];
         }
     }
 
@@ -788,20 +773,20 @@ export class CompletiondatestructDto implements ICompletiondatestructDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["completionDate"] = this.completionDate !== undefined ? this.completionDate : <any>null;
-        data["completionDateType"] = this.completionDateType !== undefined ? this.completionDateType : <any>null;
+        data["completionDate"] = this.completionDate;
+        data["completionDateType"] = this.completionDateType;
         return data; 
     }
 }
 
 export interface ICompletiondatestructDto {
-    completionDate?: string | null;
-    completionDateType?: string | null;
+    completionDate?: string | undefined;
+    completionDateType?: string | undefined;
 }
 
 export class StudyfirstpostdatestructDto implements IStudyfirstpostdatestructDto {
-    studyFirstPostDate?: string | null;
-    studyFirstPostDateType?: string | null;
+    studyFirstPostDate?: string | undefined;
+    studyFirstPostDateType?: string | undefined;
 
     constructor(data?: IStudyfirstpostdatestructDto) {
         if (data) {
@@ -814,8 +799,8 @@ export class StudyfirstpostdatestructDto implements IStudyfirstpostdatestructDto
 
     init(_data?: any) {
         if (_data) {
-            this.studyFirstPostDate = _data["studyFirstPostDate"] !== undefined ? _data["studyFirstPostDate"] : <any>null;
-            this.studyFirstPostDateType = _data["studyFirstPostDateType"] !== undefined ? _data["studyFirstPostDateType"] : <any>null;
+            this.studyFirstPostDate = _data["studyFirstPostDate"];
+            this.studyFirstPostDateType = _data["studyFirstPostDateType"];
         }
     }
 
@@ -828,20 +813,20 @@ export class StudyfirstpostdatestructDto implements IStudyfirstpostdatestructDto
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["studyFirstPostDate"] = this.studyFirstPostDate !== undefined ? this.studyFirstPostDate : <any>null;
-        data["studyFirstPostDateType"] = this.studyFirstPostDateType !== undefined ? this.studyFirstPostDateType : <any>null;
+        data["studyFirstPostDate"] = this.studyFirstPostDate;
+        data["studyFirstPostDateType"] = this.studyFirstPostDateType;
         return data; 
     }
 }
 
 export interface IStudyfirstpostdatestructDto {
-    studyFirstPostDate?: string | null;
-    studyFirstPostDateType?: string | null;
+    studyFirstPostDate?: string | undefined;
+    studyFirstPostDateType?: string | undefined;
 }
 
 export class LastupdatepostdatestructDto implements ILastupdatepostdatestructDto {
-    lastUpdatePostDate?: string | null;
-    lastUpdatePostDateType?: string | null;
+    lastUpdatePostDate?: string | undefined;
+    lastUpdatePostDateType?: string | undefined;
 
     constructor(data?: ILastupdatepostdatestructDto) {
         if (data) {
@@ -854,8 +839,8 @@ export class LastupdatepostdatestructDto implements ILastupdatepostdatestructDto
 
     init(_data?: any) {
         if (_data) {
-            this.lastUpdatePostDate = _data["lastUpdatePostDate"] !== undefined ? _data["lastUpdatePostDate"] : <any>null;
-            this.lastUpdatePostDateType = _data["lastUpdatePostDateType"] !== undefined ? _data["lastUpdatePostDateType"] : <any>null;
+            this.lastUpdatePostDate = _data["lastUpdatePostDate"];
+            this.lastUpdatePostDateType = _data["lastUpdatePostDateType"];
         }
     }
 
@@ -868,20 +853,20 @@ export class LastupdatepostdatestructDto implements ILastupdatepostdatestructDto
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["lastUpdatePostDate"] = this.lastUpdatePostDate !== undefined ? this.lastUpdatePostDate : <any>null;
-        data["lastUpdatePostDateType"] = this.lastUpdatePostDateType !== undefined ? this.lastUpdatePostDateType : <any>null;
+        data["lastUpdatePostDate"] = this.lastUpdatePostDate;
+        data["lastUpdatePostDateType"] = this.lastUpdatePostDateType;
         return data; 
     }
 }
 
 export interface ILastupdatepostdatestructDto {
-    lastUpdatePostDate?: string | null;
-    lastUpdatePostDateType?: string | null;
+    lastUpdatePostDate?: string | undefined;
+    lastUpdatePostDateType?: string | undefined;
 }
 
 export class SponsorcollaboratorsmoduleDto implements ISponsorcollaboratorsmoduleDto {
-    responsibleParty?: ResponsiblepartyDto | null;
-    leadSponsor?: LeadsponsorDto | null;
+    responsibleParty?: ResponsiblepartyDto | undefined;
+    leadSponsor?: LeadsponsorDto | undefined;
 
     constructor(data?: ISponsorcollaboratorsmoduleDto) {
         if (data) {
@@ -894,8 +879,8 @@ export class SponsorcollaboratorsmoduleDto implements ISponsorcollaboratorsmodul
 
     init(_data?: any) {
         if (_data) {
-            this.responsibleParty = _data["responsibleParty"] ? ResponsiblepartyDto.fromJS(_data["responsibleParty"]) : <any>null;
-            this.leadSponsor = _data["leadSponsor"] ? LeadsponsorDto.fromJS(_data["leadSponsor"]) : <any>null;
+            this.responsibleParty = _data["responsibleParty"] ? ResponsiblepartyDto.fromJS(_data["responsibleParty"]) : <any>undefined;
+            this.leadSponsor = _data["leadSponsor"] ? LeadsponsorDto.fromJS(_data["leadSponsor"]) : <any>undefined;
         }
     }
 
@@ -908,22 +893,22 @@ export class SponsorcollaboratorsmoduleDto implements ISponsorcollaboratorsmodul
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["responsibleParty"] = this.responsibleParty ? this.responsibleParty.toJSON() : <any>null;
-        data["leadSponsor"] = this.leadSponsor ? this.leadSponsor.toJSON() : <any>null;
+        data["responsibleParty"] = this.responsibleParty ? this.responsibleParty.toJSON() : <any>undefined;
+        data["leadSponsor"] = this.leadSponsor ? this.leadSponsor.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface ISponsorcollaboratorsmoduleDto {
-    responsibleParty?: ResponsiblepartyDto | null;
-    leadSponsor?: LeadsponsorDto | null;
+    responsibleParty?: ResponsiblepartyDto | undefined;
+    leadSponsor?: LeadsponsorDto | undefined;
 }
 
 export class ResponsiblepartyDto implements IResponsiblepartyDto {
-    responsiblePartyType?: string | null;
-    responsiblePartyInvestigatorFullName?: string | null;
-    responsiblePartyInvestigatorTitle?: string | null;
-    responsiblePartyInvestigatorAffiliation?: string | null;
+    responsiblePartyType?: string | undefined;
+    responsiblePartyInvestigatorFullName?: string | undefined;
+    responsiblePartyInvestigatorTitle?: string | undefined;
+    responsiblePartyInvestigatorAffiliation?: string | undefined;
 
     constructor(data?: IResponsiblepartyDto) {
         if (data) {
@@ -936,10 +921,10 @@ export class ResponsiblepartyDto implements IResponsiblepartyDto {
 
     init(_data?: any) {
         if (_data) {
-            this.responsiblePartyType = _data["responsiblePartyType"] !== undefined ? _data["responsiblePartyType"] : <any>null;
-            this.responsiblePartyInvestigatorFullName = _data["responsiblePartyInvestigatorFullName"] !== undefined ? _data["responsiblePartyInvestigatorFullName"] : <any>null;
-            this.responsiblePartyInvestigatorTitle = _data["responsiblePartyInvestigatorTitle"] !== undefined ? _data["responsiblePartyInvestigatorTitle"] : <any>null;
-            this.responsiblePartyInvestigatorAffiliation = _data["responsiblePartyInvestigatorAffiliation"] !== undefined ? _data["responsiblePartyInvestigatorAffiliation"] : <any>null;
+            this.responsiblePartyType = _data["responsiblePartyType"];
+            this.responsiblePartyInvestigatorFullName = _data["responsiblePartyInvestigatorFullName"];
+            this.responsiblePartyInvestigatorTitle = _data["responsiblePartyInvestigatorTitle"];
+            this.responsiblePartyInvestigatorAffiliation = _data["responsiblePartyInvestigatorAffiliation"];
         }
     }
 
@@ -952,24 +937,24 @@ export class ResponsiblepartyDto implements IResponsiblepartyDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["responsiblePartyType"] = this.responsiblePartyType !== undefined ? this.responsiblePartyType : <any>null;
-        data["responsiblePartyInvestigatorFullName"] = this.responsiblePartyInvestigatorFullName !== undefined ? this.responsiblePartyInvestigatorFullName : <any>null;
-        data["responsiblePartyInvestigatorTitle"] = this.responsiblePartyInvestigatorTitle !== undefined ? this.responsiblePartyInvestigatorTitle : <any>null;
-        data["responsiblePartyInvestigatorAffiliation"] = this.responsiblePartyInvestigatorAffiliation !== undefined ? this.responsiblePartyInvestigatorAffiliation : <any>null;
+        data["responsiblePartyType"] = this.responsiblePartyType;
+        data["responsiblePartyInvestigatorFullName"] = this.responsiblePartyInvestigatorFullName;
+        data["responsiblePartyInvestigatorTitle"] = this.responsiblePartyInvestigatorTitle;
+        data["responsiblePartyInvestigatorAffiliation"] = this.responsiblePartyInvestigatorAffiliation;
         return data; 
     }
 }
 
 export interface IResponsiblepartyDto {
-    responsiblePartyType?: string | null;
-    responsiblePartyInvestigatorFullName?: string | null;
-    responsiblePartyInvestigatorTitle?: string | null;
-    responsiblePartyInvestigatorAffiliation?: string | null;
+    responsiblePartyType?: string | undefined;
+    responsiblePartyInvestigatorFullName?: string | undefined;
+    responsiblePartyInvestigatorTitle?: string | undefined;
+    responsiblePartyInvestigatorAffiliation?: string | undefined;
 }
 
 export class LeadsponsorDto implements ILeadsponsorDto {
-    leadSponsorName?: string | null;
-    leadSponsorClass?: string | null;
+    leadSponsorName?: string | undefined;
+    leadSponsorClass?: string | undefined;
 
     constructor(data?: ILeadsponsorDto) {
         if (data) {
@@ -982,8 +967,8 @@ export class LeadsponsorDto implements ILeadsponsorDto {
 
     init(_data?: any) {
         if (_data) {
-            this.leadSponsorName = _data["leadSponsorName"] !== undefined ? _data["leadSponsorName"] : <any>null;
-            this.leadSponsorClass = _data["leadSponsorClass"] !== undefined ? _data["leadSponsorClass"] : <any>null;
+            this.leadSponsorName = _data["leadSponsorName"];
+            this.leadSponsorClass = _data["leadSponsorClass"];
         }
     }
 
@@ -996,19 +981,19 @@ export class LeadsponsorDto implements ILeadsponsorDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["leadSponsorName"] = this.leadSponsorName !== undefined ? this.leadSponsorName : <any>null;
-        data["leadSponsorClass"] = this.leadSponsorClass !== undefined ? this.leadSponsorClass : <any>null;
+        data["leadSponsorName"] = this.leadSponsorName;
+        data["leadSponsorClass"] = this.leadSponsorClass;
         return data; 
     }
 }
 
 export interface ILeadsponsorDto {
-    leadSponsorName?: string | null;
-    leadSponsorClass?: string | null;
+    leadSponsorName?: string | undefined;
+    leadSponsorClass?: string | undefined;
 }
 
 export class OversightmoduleDto implements IOversightmoduleDto {
-    oversightHasDMC?: string | null;
+    oversightHasDMC?: string | undefined;
 
     constructor(data?: IOversightmoduleDto) {
         if (data) {
@@ -1021,7 +1006,7 @@ export class OversightmoduleDto implements IOversightmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.oversightHasDMC = _data["oversightHasDMC"] !== undefined ? _data["oversightHasDMC"] : <any>null;
+            this.oversightHasDMC = _data["oversightHasDMC"];
         }
     }
 
@@ -1034,18 +1019,18 @@ export class OversightmoduleDto implements IOversightmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["oversightHasDMC"] = this.oversightHasDMC !== undefined ? this.oversightHasDMC : <any>null;
+        data["oversightHasDMC"] = this.oversightHasDMC;
         return data; 
     }
 }
 
 export interface IOversightmoduleDto {
-    oversightHasDMC?: string | null;
+    oversightHasDMC?: string | undefined;
 }
 
 export class DescriptionmoduleDto implements IDescriptionmoduleDto {
-    briefSummary?: string | null;
-    detailedDescription?: string | null;
+    briefSummary?: string | undefined;
+    detailedDescription?: string | undefined;
 
     constructor(data?: IDescriptionmoduleDto) {
         if (data) {
@@ -1058,8 +1043,8 @@ export class DescriptionmoduleDto implements IDescriptionmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.briefSummary = _data["briefSummary"] !== undefined ? _data["briefSummary"] : <any>null;
-            this.detailedDescription = _data["detailedDescription"] !== undefined ? _data["detailedDescription"] : <any>null;
+            this.briefSummary = _data["briefSummary"];
+            this.detailedDescription = _data["detailedDescription"];
         }
     }
 
@@ -1072,20 +1057,20 @@ export class DescriptionmoduleDto implements IDescriptionmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["briefSummary"] = this.briefSummary !== undefined ? this.briefSummary : <any>null;
-        data["detailedDescription"] = this.detailedDescription !== undefined ? this.detailedDescription : <any>null;
+        data["briefSummary"] = this.briefSummary;
+        data["detailedDescription"] = this.detailedDescription;
         return data; 
     }
 }
 
 export interface IDescriptionmoduleDto {
-    briefSummary?: string | null;
-    detailedDescription?: string | null;
+    briefSummary?: string | undefined;
+    detailedDescription?: string | undefined;
 }
 
 export class ConditionsmoduleDto implements IConditionsmoduleDto {
-    conditionList?: ConditionlistDto | null;
-    keywordList?: KeywordlistDto | null;
+    conditionList?: ConditionlistDto | undefined;
+    keywordList?: KeywordlistDto | undefined;
 
     constructor(data?: IConditionsmoduleDto) {
         if (data) {
@@ -1098,8 +1083,8 @@ export class ConditionsmoduleDto implements IConditionsmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.conditionList = _data["conditionList"] ? ConditionlistDto.fromJS(_data["conditionList"]) : <any>null;
-            this.keywordList = _data["keywordList"] ? KeywordlistDto.fromJS(_data["keywordList"]) : <any>null;
+            this.conditionList = _data["conditionList"] ? ConditionlistDto.fromJS(_data["conditionList"]) : <any>undefined;
+            this.keywordList = _data["keywordList"] ? KeywordlistDto.fromJS(_data["keywordList"]) : <any>undefined;
         }
     }
 
@@ -1112,19 +1097,19 @@ export class ConditionsmoduleDto implements IConditionsmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["conditionList"] = this.conditionList ? this.conditionList.toJSON() : <any>null;
-        data["keywordList"] = this.keywordList ? this.keywordList.toJSON() : <any>null;
+        data["conditionList"] = this.conditionList ? this.conditionList.toJSON() : <any>undefined;
+        data["keywordList"] = this.keywordList ? this.keywordList.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IConditionsmoduleDto {
-    conditionList?: ConditionlistDto | null;
-    keywordList?: KeywordlistDto | null;
+    conditionList?: ConditionlistDto | undefined;
+    keywordList?: KeywordlistDto | undefined;
 }
 
 export class ConditionlistDto implements IConditionlistDto {
-    condition?: string[] | null;
+    condition?: string[] | undefined;
 
     constructor(data?: IConditionlistDto) {
         if (data) {
@@ -1164,11 +1149,11 @@ export class ConditionlistDto implements IConditionlistDto {
 }
 
 export interface IConditionlistDto {
-    condition?: string[] | null;
+    condition?: string[] | undefined;
 }
 
 export class KeywordlistDto implements IKeywordlistDto {
-    keyword?: string[] | null;
+    keyword?: string[] | undefined;
 
     constructor(data?: IKeywordlistDto) {
         if (data) {
@@ -1208,15 +1193,15 @@ export class KeywordlistDto implements IKeywordlistDto {
 }
 
 export interface IKeywordlistDto {
-    keyword?: string[] | null;
+    keyword?: string[] | undefined;
 }
 
 export class DesignmoduleDto implements IDesignmoduleDto {
-    studyType?: string | null;
-    patientRegistry?: string | null;
-    targetDuration?: string | null;
-    designInfo?: DesigninfoDto | null;
-    enrollmentInfo?: EnrollmentinfoDto | null;
+    studyType?: string | undefined;
+    patientRegistry?: string | undefined;
+    targetDuration?: string | undefined;
+    designInfo?: DesigninfoDto | undefined;
+    enrollmentInfo?: EnrollmentinfoDto | undefined;
 
     constructor(data?: IDesignmoduleDto) {
         if (data) {
@@ -1229,11 +1214,11 @@ export class DesignmoduleDto implements IDesignmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.studyType = _data["studyType"] !== undefined ? _data["studyType"] : <any>null;
-            this.patientRegistry = _data["patientRegistry"] !== undefined ? _data["patientRegistry"] : <any>null;
-            this.targetDuration = _data["targetDuration"] !== undefined ? _data["targetDuration"] : <any>null;
-            this.designInfo = _data["designInfo"] ? DesigninfoDto.fromJS(_data["designInfo"]) : <any>null;
-            this.enrollmentInfo = _data["enrollmentInfo"] ? EnrollmentinfoDto.fromJS(_data["enrollmentInfo"]) : <any>null;
+            this.studyType = _data["studyType"];
+            this.patientRegistry = _data["patientRegistry"];
+            this.targetDuration = _data["targetDuration"];
+            this.designInfo = _data["designInfo"] ? DesigninfoDto.fromJS(_data["designInfo"]) : <any>undefined;
+            this.enrollmentInfo = _data["enrollmentInfo"] ? EnrollmentinfoDto.fromJS(_data["enrollmentInfo"]) : <any>undefined;
         }
     }
 
@@ -1246,26 +1231,26 @@ export class DesignmoduleDto implements IDesignmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["studyType"] = this.studyType !== undefined ? this.studyType : <any>null;
-        data["patientRegistry"] = this.patientRegistry !== undefined ? this.patientRegistry : <any>null;
-        data["targetDuration"] = this.targetDuration !== undefined ? this.targetDuration : <any>null;
-        data["designInfo"] = this.designInfo ? this.designInfo.toJSON() : <any>null;
-        data["enrollmentInfo"] = this.enrollmentInfo ? this.enrollmentInfo.toJSON() : <any>null;
+        data["studyType"] = this.studyType;
+        data["patientRegistry"] = this.patientRegistry;
+        data["targetDuration"] = this.targetDuration;
+        data["designInfo"] = this.designInfo ? this.designInfo.toJSON() : <any>undefined;
+        data["enrollmentInfo"] = this.enrollmentInfo ? this.enrollmentInfo.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IDesignmoduleDto {
-    studyType?: string | null;
-    patientRegistry?: string | null;
-    targetDuration?: string | null;
-    designInfo?: DesigninfoDto | null;
-    enrollmentInfo?: EnrollmentinfoDto | null;
+    studyType?: string | undefined;
+    patientRegistry?: string | undefined;
+    targetDuration?: string | undefined;
+    designInfo?: DesigninfoDto | undefined;
+    enrollmentInfo?: EnrollmentinfoDto | undefined;
 }
 
 export class DesigninfoDto implements IDesigninfoDto {
-    designObservationalModelList?: DesignobservationalmodellistDto | null;
-    designTimePerspectiveList?: DesigntimeperspectivelistDto | null;
+    designObservationalModelList?: DesignobservationalmodellistDto | undefined;
+    designTimePerspectiveList?: DesigntimeperspectivelistDto | undefined;
 
     constructor(data?: IDesigninfoDto) {
         if (data) {
@@ -1278,8 +1263,8 @@ export class DesigninfoDto implements IDesigninfoDto {
 
     init(_data?: any) {
         if (_data) {
-            this.designObservationalModelList = _data["designObservationalModelList"] ? DesignobservationalmodellistDto.fromJS(_data["designObservationalModelList"]) : <any>null;
-            this.designTimePerspectiveList = _data["designTimePerspectiveList"] ? DesigntimeperspectivelistDto.fromJS(_data["designTimePerspectiveList"]) : <any>null;
+            this.designObservationalModelList = _data["designObservationalModelList"] ? DesignobservationalmodellistDto.fromJS(_data["designObservationalModelList"]) : <any>undefined;
+            this.designTimePerspectiveList = _data["designTimePerspectiveList"] ? DesigntimeperspectivelistDto.fromJS(_data["designTimePerspectiveList"]) : <any>undefined;
         }
     }
 
@@ -1292,19 +1277,19 @@ export class DesigninfoDto implements IDesigninfoDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["designObservationalModelList"] = this.designObservationalModelList ? this.designObservationalModelList.toJSON() : <any>null;
-        data["designTimePerspectiveList"] = this.designTimePerspectiveList ? this.designTimePerspectiveList.toJSON() : <any>null;
+        data["designObservationalModelList"] = this.designObservationalModelList ? this.designObservationalModelList.toJSON() : <any>undefined;
+        data["designTimePerspectiveList"] = this.designTimePerspectiveList ? this.designTimePerspectiveList.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IDesigninfoDto {
-    designObservationalModelList?: DesignobservationalmodellistDto | null;
-    designTimePerspectiveList?: DesigntimeperspectivelistDto | null;
+    designObservationalModelList?: DesignobservationalmodellistDto | undefined;
+    designTimePerspectiveList?: DesigntimeperspectivelistDto | undefined;
 }
 
 export class DesignobservationalmodellistDto implements IDesignobservationalmodellistDto {
-    designObservationalModel?: string[] | null;
+    designObservationalModel?: string[] | undefined;
 
     constructor(data?: IDesignobservationalmodellistDto) {
         if (data) {
@@ -1344,11 +1329,11 @@ export class DesignobservationalmodellistDto implements IDesignobservationalmode
 }
 
 export interface IDesignobservationalmodellistDto {
-    designObservationalModel?: string[] | null;
+    designObservationalModel?: string[] | undefined;
 }
 
 export class DesigntimeperspectivelistDto implements IDesigntimeperspectivelistDto {
-    designTimePerspective?: string[] | null;
+    designTimePerspective?: string[] | undefined;
 
     constructor(data?: IDesigntimeperspectivelistDto) {
         if (data) {
@@ -1388,12 +1373,12 @@ export class DesigntimeperspectivelistDto implements IDesigntimeperspectivelistD
 }
 
 export interface IDesigntimeperspectivelistDto {
-    designTimePerspective?: string[] | null;
+    designTimePerspective?: string[] | undefined;
 }
 
 export class EnrollmentinfoDto implements IEnrollmentinfoDto {
-    enrollmentCount?: string | null;
-    enrollmentType?: string | null;
+    enrollmentCount?: string | undefined;
+    enrollmentType?: string | undefined;
 
     constructor(data?: IEnrollmentinfoDto) {
         if (data) {
@@ -1406,8 +1391,8 @@ export class EnrollmentinfoDto implements IEnrollmentinfoDto {
 
     init(_data?: any) {
         if (_data) {
-            this.enrollmentCount = _data["enrollmentCount"] !== undefined ? _data["enrollmentCount"] : <any>null;
-            this.enrollmentType = _data["enrollmentType"] !== undefined ? _data["enrollmentType"] : <any>null;
+            this.enrollmentCount = _data["enrollmentCount"];
+            this.enrollmentType = _data["enrollmentType"];
         }
     }
 
@@ -1420,19 +1405,19 @@ export class EnrollmentinfoDto implements IEnrollmentinfoDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["enrollmentCount"] = this.enrollmentCount !== undefined ? this.enrollmentCount : <any>null;
-        data["enrollmentType"] = this.enrollmentType !== undefined ? this.enrollmentType : <any>null;
+        data["enrollmentCount"] = this.enrollmentCount;
+        data["enrollmentType"] = this.enrollmentType;
         return data; 
     }
 }
 
 export interface IEnrollmentinfoDto {
-    enrollmentCount?: string | null;
-    enrollmentType?: string | null;
+    enrollmentCount?: string | undefined;
+    enrollmentType?: string | undefined;
 }
 
 export class ArmsinterventionsmoduleDto implements IArmsinterventionsmoduleDto {
-    armGroupList?: ArmgrouplistDto | null;
+    armGroupList?: ArmgrouplistDto | undefined;
 
     constructor(data?: IArmsinterventionsmoduleDto) {
         if (data) {
@@ -1445,7 +1430,7 @@ export class ArmsinterventionsmoduleDto implements IArmsinterventionsmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.armGroupList = _data["armGroupList"] ? ArmgrouplistDto.fromJS(_data["armGroupList"]) : <any>null;
+            this.armGroupList = _data["armGroupList"] ? ArmgrouplistDto.fromJS(_data["armGroupList"]) : <any>undefined;
         }
     }
 
@@ -1458,17 +1443,17 @@ export class ArmsinterventionsmoduleDto implements IArmsinterventionsmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["armGroupList"] = this.armGroupList ? this.armGroupList.toJSON() : <any>null;
+        data["armGroupList"] = this.armGroupList ? this.armGroupList.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IArmsinterventionsmoduleDto {
-    armGroupList?: ArmgrouplistDto | null;
+    armGroupList?: ArmgrouplistDto | undefined;
 }
 
 export class ArmgrouplistDto implements IArmgrouplistDto {
-    armGroup?: ArmgroupDto[] | null;
+    armGroup?: ArmgroupDto[] | undefined;
 
     constructor(data?: IArmgrouplistDto) {
         if (data) {
@@ -1508,12 +1493,12 @@ export class ArmgrouplistDto implements IArmgrouplistDto {
 }
 
 export interface IArmgrouplistDto {
-    armGroup?: ArmgroupDto[] | null;
+    armGroup?: ArmgroupDto[] | undefined;
 }
 
 export class ArmgroupDto implements IArmgroupDto {
-    armGroupLabel?: string | null;
-    armGroupDescription?: string | null;
+    armGroupLabel?: string | undefined;
+    armGroupDescription?: string | undefined;
 
     constructor(data?: IArmgroupDto) {
         if (data) {
@@ -1526,8 +1511,8 @@ export class ArmgroupDto implements IArmgroupDto {
 
     init(_data?: any) {
         if (_data) {
-            this.armGroupLabel = _data["armGroupLabel"] !== undefined ? _data["armGroupLabel"] : <any>null;
-            this.armGroupDescription = _data["armGroupDescription"] !== undefined ? _data["armGroupDescription"] : <any>null;
+            this.armGroupLabel = _data["armGroupLabel"];
+            this.armGroupDescription = _data["armGroupDescription"];
         }
     }
 
@@ -1540,21 +1525,21 @@ export class ArmgroupDto implements IArmgroupDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["armGroupLabel"] = this.armGroupLabel !== undefined ? this.armGroupLabel : <any>null;
-        data["armGroupDescription"] = this.armGroupDescription !== undefined ? this.armGroupDescription : <any>null;
+        data["armGroupLabel"] = this.armGroupLabel;
+        data["armGroupDescription"] = this.armGroupDescription;
         return data; 
     }
 }
 
 export interface IArmgroupDto {
-    armGroupLabel?: string | null;
-    armGroupDescription?: string | null;
+    armGroupLabel?: string | undefined;
+    armGroupDescription?: string | undefined;
 }
 
 export class OutcomesmoduleDto implements IOutcomesmoduleDto {
-    primaryOutcomeList?: PrimaryoutcomelistDto | null;
-    secondaryOutcomeList?: SecondaryoutcomelistDto | null;
-    otherOutcomeList?: OtheroutcomelistDto | null;
+    primaryOutcomeList?: PrimaryoutcomelistDto | undefined;
+    secondaryOutcomeList?: SecondaryoutcomelistDto | undefined;
+    otherOutcomeList?: OtheroutcomelistDto | undefined;
 
     constructor(data?: IOutcomesmoduleDto) {
         if (data) {
@@ -1567,9 +1552,9 @@ export class OutcomesmoduleDto implements IOutcomesmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.primaryOutcomeList = _data["primaryOutcomeList"] ? PrimaryoutcomelistDto.fromJS(_data["primaryOutcomeList"]) : <any>null;
-            this.secondaryOutcomeList = _data["secondaryOutcomeList"] ? SecondaryoutcomelistDto.fromJS(_data["secondaryOutcomeList"]) : <any>null;
-            this.otherOutcomeList = _data["otherOutcomeList"] ? OtheroutcomelistDto.fromJS(_data["otherOutcomeList"]) : <any>null;
+            this.primaryOutcomeList = _data["primaryOutcomeList"] ? PrimaryoutcomelistDto.fromJS(_data["primaryOutcomeList"]) : <any>undefined;
+            this.secondaryOutcomeList = _data["secondaryOutcomeList"] ? SecondaryoutcomelistDto.fromJS(_data["secondaryOutcomeList"]) : <any>undefined;
+            this.otherOutcomeList = _data["otherOutcomeList"] ? OtheroutcomelistDto.fromJS(_data["otherOutcomeList"]) : <any>undefined;
         }
     }
 
@@ -1582,21 +1567,21 @@ export class OutcomesmoduleDto implements IOutcomesmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["primaryOutcomeList"] = this.primaryOutcomeList ? this.primaryOutcomeList.toJSON() : <any>null;
-        data["secondaryOutcomeList"] = this.secondaryOutcomeList ? this.secondaryOutcomeList.toJSON() : <any>null;
-        data["otherOutcomeList"] = this.otherOutcomeList ? this.otherOutcomeList.toJSON() : <any>null;
+        data["primaryOutcomeList"] = this.primaryOutcomeList ? this.primaryOutcomeList.toJSON() : <any>undefined;
+        data["secondaryOutcomeList"] = this.secondaryOutcomeList ? this.secondaryOutcomeList.toJSON() : <any>undefined;
+        data["otherOutcomeList"] = this.otherOutcomeList ? this.otherOutcomeList.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IOutcomesmoduleDto {
-    primaryOutcomeList?: PrimaryoutcomelistDto | null;
-    secondaryOutcomeList?: SecondaryoutcomelistDto | null;
-    otherOutcomeList?: OtheroutcomelistDto | null;
+    primaryOutcomeList?: PrimaryoutcomelistDto | undefined;
+    secondaryOutcomeList?: SecondaryoutcomelistDto | undefined;
+    otherOutcomeList?: OtheroutcomelistDto | undefined;
 }
 
 export class PrimaryoutcomelistDto implements IPrimaryoutcomelistDto {
-    primaryOutcome?: PrimaryoutcomeDto[] | null;
+    primaryOutcome?: PrimaryoutcomeDto[] | undefined;
 
     constructor(data?: IPrimaryoutcomelistDto) {
         if (data) {
@@ -1636,13 +1621,13 @@ export class PrimaryoutcomelistDto implements IPrimaryoutcomelistDto {
 }
 
 export interface IPrimaryoutcomelistDto {
-    primaryOutcome?: PrimaryoutcomeDto[] | null;
+    primaryOutcome?: PrimaryoutcomeDto[] | undefined;
 }
 
 export class PrimaryoutcomeDto implements IPrimaryoutcomeDto {
-    primaryOutcomeMeasure?: string | null;
-    primaryOutcomeDescription?: string | null;
-    primaryOutcomeTimeFrame?: string | null;
+    primaryOutcomeMeasure?: string | undefined;
+    primaryOutcomeDescription?: string | undefined;
+    primaryOutcomeTimeFrame?: string | undefined;
 
     constructor(data?: IPrimaryoutcomeDto) {
         if (data) {
@@ -1655,9 +1640,9 @@ export class PrimaryoutcomeDto implements IPrimaryoutcomeDto {
 
     init(_data?: any) {
         if (_data) {
-            this.primaryOutcomeMeasure = _data["primaryOutcomeMeasure"] !== undefined ? _data["primaryOutcomeMeasure"] : <any>null;
-            this.primaryOutcomeDescription = _data["primaryOutcomeDescription"] !== undefined ? _data["primaryOutcomeDescription"] : <any>null;
-            this.primaryOutcomeTimeFrame = _data["primaryOutcomeTimeFrame"] !== undefined ? _data["primaryOutcomeTimeFrame"] : <any>null;
+            this.primaryOutcomeMeasure = _data["primaryOutcomeMeasure"];
+            this.primaryOutcomeDescription = _data["primaryOutcomeDescription"];
+            this.primaryOutcomeTimeFrame = _data["primaryOutcomeTimeFrame"];
         }
     }
 
@@ -1670,21 +1655,21 @@ export class PrimaryoutcomeDto implements IPrimaryoutcomeDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["primaryOutcomeMeasure"] = this.primaryOutcomeMeasure !== undefined ? this.primaryOutcomeMeasure : <any>null;
-        data["primaryOutcomeDescription"] = this.primaryOutcomeDescription !== undefined ? this.primaryOutcomeDescription : <any>null;
-        data["primaryOutcomeTimeFrame"] = this.primaryOutcomeTimeFrame !== undefined ? this.primaryOutcomeTimeFrame : <any>null;
+        data["primaryOutcomeMeasure"] = this.primaryOutcomeMeasure;
+        data["primaryOutcomeDescription"] = this.primaryOutcomeDescription;
+        data["primaryOutcomeTimeFrame"] = this.primaryOutcomeTimeFrame;
         return data; 
     }
 }
 
 export interface IPrimaryoutcomeDto {
-    primaryOutcomeMeasure?: string | null;
-    primaryOutcomeDescription?: string | null;
-    primaryOutcomeTimeFrame?: string | null;
+    primaryOutcomeMeasure?: string | undefined;
+    primaryOutcomeDescription?: string | undefined;
+    primaryOutcomeTimeFrame?: string | undefined;
 }
 
 export class SecondaryoutcomelistDto implements ISecondaryoutcomelistDto {
-    secondaryOutcome?: SecondaryoutcomeDto[] | null;
+    secondaryOutcome?: SecondaryoutcomeDto[] | undefined;
 
     constructor(data?: ISecondaryoutcomelistDto) {
         if (data) {
@@ -1724,13 +1709,13 @@ export class SecondaryoutcomelistDto implements ISecondaryoutcomelistDto {
 }
 
 export interface ISecondaryoutcomelistDto {
-    secondaryOutcome?: SecondaryoutcomeDto[] | null;
+    secondaryOutcome?: SecondaryoutcomeDto[] | undefined;
 }
 
 export class SecondaryoutcomeDto implements ISecondaryoutcomeDto {
-    secondaryOutcomeMeasure?: string | null;
-    secondaryOutcomeDescription?: string | null;
-    secondaryOutcomeTimeFrame?: string | null;
+    secondaryOutcomeMeasure?: string | undefined;
+    secondaryOutcomeDescription?: string | undefined;
+    secondaryOutcomeTimeFrame?: string | undefined;
 
     constructor(data?: ISecondaryoutcomeDto) {
         if (data) {
@@ -1743,9 +1728,9 @@ export class SecondaryoutcomeDto implements ISecondaryoutcomeDto {
 
     init(_data?: any) {
         if (_data) {
-            this.secondaryOutcomeMeasure = _data["secondaryOutcomeMeasure"] !== undefined ? _data["secondaryOutcomeMeasure"] : <any>null;
-            this.secondaryOutcomeDescription = _data["secondaryOutcomeDescription"] !== undefined ? _data["secondaryOutcomeDescription"] : <any>null;
-            this.secondaryOutcomeTimeFrame = _data["secondaryOutcomeTimeFrame"] !== undefined ? _data["secondaryOutcomeTimeFrame"] : <any>null;
+            this.secondaryOutcomeMeasure = _data["secondaryOutcomeMeasure"];
+            this.secondaryOutcomeDescription = _data["secondaryOutcomeDescription"];
+            this.secondaryOutcomeTimeFrame = _data["secondaryOutcomeTimeFrame"];
         }
     }
 
@@ -1758,21 +1743,21 @@ export class SecondaryoutcomeDto implements ISecondaryoutcomeDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["secondaryOutcomeMeasure"] = this.secondaryOutcomeMeasure !== undefined ? this.secondaryOutcomeMeasure : <any>null;
-        data["secondaryOutcomeDescription"] = this.secondaryOutcomeDescription !== undefined ? this.secondaryOutcomeDescription : <any>null;
-        data["secondaryOutcomeTimeFrame"] = this.secondaryOutcomeTimeFrame !== undefined ? this.secondaryOutcomeTimeFrame : <any>null;
+        data["secondaryOutcomeMeasure"] = this.secondaryOutcomeMeasure;
+        data["secondaryOutcomeDescription"] = this.secondaryOutcomeDescription;
+        data["secondaryOutcomeTimeFrame"] = this.secondaryOutcomeTimeFrame;
         return data; 
     }
 }
 
 export interface ISecondaryoutcomeDto {
-    secondaryOutcomeMeasure?: string | null;
-    secondaryOutcomeDescription?: string | null;
-    secondaryOutcomeTimeFrame?: string | null;
+    secondaryOutcomeMeasure?: string | undefined;
+    secondaryOutcomeDescription?: string | undefined;
+    secondaryOutcomeTimeFrame?: string | undefined;
 }
 
 export class OtheroutcomelistDto implements IOtheroutcomelistDto {
-    otherOutcome?: OtheroutcomeDto[] | null;
+    otherOutcome?: OtheroutcomeDto[] | undefined;
 
     constructor(data?: IOtheroutcomelistDto) {
         if (data) {
@@ -1812,12 +1797,12 @@ export class OtheroutcomelistDto implements IOtheroutcomelistDto {
 }
 
 export interface IOtheroutcomelistDto {
-    otherOutcome?: OtheroutcomeDto[] | null;
+    otherOutcome?: OtheroutcomeDto[] | undefined;
 }
 
 export class OtheroutcomeDto implements IOtheroutcomeDto {
-    otherOutcomeMeasure?: string | null;
-    otherOutcomeTimeFrame?: string | null;
+    otherOutcomeMeasure?: string | undefined;
+    otherOutcomeTimeFrame?: string | undefined;
 
     constructor(data?: IOtheroutcomeDto) {
         if (data) {
@@ -1830,8 +1815,8 @@ export class OtheroutcomeDto implements IOtheroutcomeDto {
 
     init(_data?: any) {
         if (_data) {
-            this.otherOutcomeMeasure = _data["otherOutcomeMeasure"] !== undefined ? _data["otherOutcomeMeasure"] : <any>null;
-            this.otherOutcomeTimeFrame = _data["otherOutcomeTimeFrame"] !== undefined ? _data["otherOutcomeTimeFrame"] : <any>null;
+            this.otherOutcomeMeasure = _data["otherOutcomeMeasure"];
+            this.otherOutcomeTimeFrame = _data["otherOutcomeTimeFrame"];
         }
     }
 
@@ -1844,24 +1829,24 @@ export class OtheroutcomeDto implements IOtheroutcomeDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["otherOutcomeMeasure"] = this.otherOutcomeMeasure !== undefined ? this.otherOutcomeMeasure : <any>null;
-        data["otherOutcomeTimeFrame"] = this.otherOutcomeTimeFrame !== undefined ? this.otherOutcomeTimeFrame : <any>null;
+        data["otherOutcomeMeasure"] = this.otherOutcomeMeasure;
+        data["otherOutcomeTimeFrame"] = this.otherOutcomeTimeFrame;
         return data; 
     }
 }
 
 export interface IOtheroutcomeDto {
-    otherOutcomeMeasure?: string | null;
-    otherOutcomeTimeFrame?: string | null;
+    otherOutcomeMeasure?: string | undefined;
+    otherOutcomeTimeFrame?: string | undefined;
 }
 
 export class EligibilitymoduleDto implements IEligibilitymoduleDto {
-    eligibilityCriteria?: string | null;
-    healthyVolunteers?: string | null;
-    gender?: string | null;
-    stdAgeList?: StdagelistDto | null;
-    studyPopulation?: string | null;
-    samplingMethod?: string | null;
+    eligibilityCriteria?: string | undefined;
+    healthyVolunteers?: string | undefined;
+    gender?: string | undefined;
+    stdAgeList?: StdagelistDto | undefined;
+    studyPopulation?: string | undefined;
+    samplingMethod?: string | undefined;
 
     constructor(data?: IEligibilitymoduleDto) {
         if (data) {
@@ -1874,12 +1859,12 @@ export class EligibilitymoduleDto implements IEligibilitymoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.eligibilityCriteria = _data["eligibilityCriteria"] !== undefined ? _data["eligibilityCriteria"] : <any>null;
-            this.healthyVolunteers = _data["healthyVolunteers"] !== undefined ? _data["healthyVolunteers"] : <any>null;
-            this.gender = _data["gender"] !== undefined ? _data["gender"] : <any>null;
-            this.stdAgeList = _data["stdAgeList"] ? StdagelistDto.fromJS(_data["stdAgeList"]) : <any>null;
-            this.studyPopulation = _data["studyPopulation"] !== undefined ? _data["studyPopulation"] : <any>null;
-            this.samplingMethod = _data["samplingMethod"] !== undefined ? _data["samplingMethod"] : <any>null;
+            this.eligibilityCriteria = _data["eligibilityCriteria"];
+            this.healthyVolunteers = _data["healthyVolunteers"];
+            this.gender = _data["gender"];
+            this.stdAgeList = _data["stdAgeList"] ? StdagelistDto.fromJS(_data["stdAgeList"]) : <any>undefined;
+            this.studyPopulation = _data["studyPopulation"];
+            this.samplingMethod = _data["samplingMethod"];
         }
     }
 
@@ -1892,27 +1877,27 @@ export class EligibilitymoduleDto implements IEligibilitymoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["eligibilityCriteria"] = this.eligibilityCriteria !== undefined ? this.eligibilityCriteria : <any>null;
-        data["healthyVolunteers"] = this.healthyVolunteers !== undefined ? this.healthyVolunteers : <any>null;
-        data["gender"] = this.gender !== undefined ? this.gender : <any>null;
-        data["stdAgeList"] = this.stdAgeList ? this.stdAgeList.toJSON() : <any>null;
-        data["studyPopulation"] = this.studyPopulation !== undefined ? this.studyPopulation : <any>null;
-        data["samplingMethod"] = this.samplingMethod !== undefined ? this.samplingMethod : <any>null;
+        data["eligibilityCriteria"] = this.eligibilityCriteria;
+        data["healthyVolunteers"] = this.healthyVolunteers;
+        data["gender"] = this.gender;
+        data["stdAgeList"] = this.stdAgeList ? this.stdAgeList.toJSON() : <any>undefined;
+        data["studyPopulation"] = this.studyPopulation;
+        data["samplingMethod"] = this.samplingMethod;
         return data; 
     }
 }
 
 export interface IEligibilitymoduleDto {
-    eligibilityCriteria?: string | null;
-    healthyVolunteers?: string | null;
-    gender?: string | null;
-    stdAgeList?: StdagelistDto | null;
-    studyPopulation?: string | null;
-    samplingMethod?: string | null;
+    eligibilityCriteria?: string | undefined;
+    healthyVolunteers?: string | undefined;
+    gender?: string | undefined;
+    stdAgeList?: StdagelistDto | undefined;
+    studyPopulation?: string | undefined;
+    samplingMethod?: string | undefined;
 }
 
 export class StdagelistDto implements IStdagelistDto {
-    stdAge?: string[] | null;
+    stdAge?: string[] | undefined;
 
     constructor(data?: IStdagelistDto) {
         if (data) {
@@ -1952,12 +1937,12 @@ export class StdagelistDto implements IStdagelistDto {
 }
 
 export interface IStdagelistDto {
-    stdAge?: string[] | null;
+    stdAge?: string[] | undefined;
 }
 
 export class ContactslocationsmoduleDto implements IContactslocationsmoduleDto {
-    overallOfficialList?: OverallofficiallistDto | null;
-    locationList?: LocationlistDto | null;
+    overallOfficialList?: OverallofficiallistDto | undefined;
+    locationList?: LocationlistDto | undefined;
 
     constructor(data?: IContactslocationsmoduleDto) {
         if (data) {
@@ -1970,8 +1955,8 @@ export class ContactslocationsmoduleDto implements IContactslocationsmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.overallOfficialList = _data["overallOfficialList"] ? OverallofficiallistDto.fromJS(_data["overallOfficialList"]) : <any>null;
-            this.locationList = _data["locationList"] ? LocationlistDto.fromJS(_data["locationList"]) : <any>null;
+            this.overallOfficialList = _data["overallOfficialList"] ? OverallofficiallistDto.fromJS(_data["overallOfficialList"]) : <any>undefined;
+            this.locationList = _data["locationList"] ? LocationlistDto.fromJS(_data["locationList"]) : <any>undefined;
         }
     }
 
@@ -1984,19 +1969,19 @@ export class ContactslocationsmoduleDto implements IContactslocationsmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["overallOfficialList"] = this.overallOfficialList ? this.overallOfficialList.toJSON() : <any>null;
-        data["locationList"] = this.locationList ? this.locationList.toJSON() : <any>null;
+        data["overallOfficialList"] = this.overallOfficialList ? this.overallOfficialList.toJSON() : <any>undefined;
+        data["locationList"] = this.locationList ? this.locationList.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IContactslocationsmoduleDto {
-    overallOfficialList?: OverallofficiallistDto | null;
-    locationList?: LocationlistDto | null;
+    overallOfficialList?: OverallofficiallistDto | undefined;
+    locationList?: LocationlistDto | undefined;
 }
 
 export class OverallofficiallistDto implements IOverallofficiallistDto {
-    overallOfficial?: OverallofficialDto[] | null;
+    overallOfficial?: OverallofficialDto[] | undefined;
 
     constructor(data?: IOverallofficiallistDto) {
         if (data) {
@@ -2036,13 +2021,13 @@ export class OverallofficiallistDto implements IOverallofficiallistDto {
 }
 
 export interface IOverallofficiallistDto {
-    overallOfficial?: OverallofficialDto[] | null;
+    overallOfficial?: OverallofficialDto[] | undefined;
 }
 
 export class OverallofficialDto implements IOverallofficialDto {
-    overallOfficialName?: string | null;
-    overallOfficialAffiliation?: string | null;
-    overallOfficialRole?: string | null;
+    overallOfficialName?: string | undefined;
+    overallOfficialAffiliation?: string | undefined;
+    overallOfficialRole?: string | undefined;
 
     constructor(data?: IOverallofficialDto) {
         if (data) {
@@ -2055,9 +2040,9 @@ export class OverallofficialDto implements IOverallofficialDto {
 
     init(_data?: any) {
         if (_data) {
-            this.overallOfficialName = _data["overallOfficialName"] !== undefined ? _data["overallOfficialName"] : <any>null;
-            this.overallOfficialAffiliation = _data["overallOfficialAffiliation"] !== undefined ? _data["overallOfficialAffiliation"] : <any>null;
-            this.overallOfficialRole = _data["overallOfficialRole"] !== undefined ? _data["overallOfficialRole"] : <any>null;
+            this.overallOfficialName = _data["overallOfficialName"];
+            this.overallOfficialAffiliation = _data["overallOfficialAffiliation"];
+            this.overallOfficialRole = _data["overallOfficialRole"];
         }
     }
 
@@ -2070,21 +2055,21 @@ export class OverallofficialDto implements IOverallofficialDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["overallOfficialName"] = this.overallOfficialName !== undefined ? this.overallOfficialName : <any>null;
-        data["overallOfficialAffiliation"] = this.overallOfficialAffiliation !== undefined ? this.overallOfficialAffiliation : <any>null;
-        data["overallOfficialRole"] = this.overallOfficialRole !== undefined ? this.overallOfficialRole : <any>null;
+        data["overallOfficialName"] = this.overallOfficialName;
+        data["overallOfficialAffiliation"] = this.overallOfficialAffiliation;
+        data["overallOfficialRole"] = this.overallOfficialRole;
         return data; 
     }
 }
 
 export interface IOverallofficialDto {
-    overallOfficialName?: string | null;
-    overallOfficialAffiliation?: string | null;
-    overallOfficialRole?: string | null;
+    overallOfficialName?: string | undefined;
+    overallOfficialAffiliation?: string | undefined;
+    overallOfficialRole?: string | undefined;
 }
 
 export class LocationlistDto implements ILocationlistDto {
-    location?: LocationDto[] | null;
+    location?: LocationDto[] | undefined;
 
     constructor(data?: ILocationlistDto) {
         if (data) {
@@ -2124,15 +2109,15 @@ export class LocationlistDto implements ILocationlistDto {
 }
 
 export interface ILocationlistDto {
-    location?: LocationDto[] | null;
+    location?: LocationDto[] | undefined;
 }
 
 export class LocationDto implements ILocationDto {
-    locationFacility?: string | null;
-    locationCity?: string | null;
-    locationState?: string | null;
-    locationZip?: string | null;
-    locationCountry?: string | null;
+    locationFacility?: string | undefined;
+    locationCity?: string | undefined;
+    locationState?: string | undefined;
+    locationZip?: string | undefined;
+    locationCountry?: string | undefined;
 
     constructor(data?: ILocationDto) {
         if (data) {
@@ -2145,11 +2130,11 @@ export class LocationDto implements ILocationDto {
 
     init(_data?: any) {
         if (_data) {
-            this.locationFacility = _data["locationFacility"] !== undefined ? _data["locationFacility"] : <any>null;
-            this.locationCity = _data["locationCity"] !== undefined ? _data["locationCity"] : <any>null;
-            this.locationState = _data["locationState"] !== undefined ? _data["locationState"] : <any>null;
-            this.locationZip = _data["locationZip"] !== undefined ? _data["locationZip"] : <any>null;
-            this.locationCountry = _data["locationCountry"] !== undefined ? _data["locationCountry"] : <any>null;
+            this.locationFacility = _data["locationFacility"];
+            this.locationCity = _data["locationCity"];
+            this.locationState = _data["locationState"];
+            this.locationZip = _data["locationZip"];
+            this.locationCountry = _data["locationCountry"];
         }
     }
 
@@ -2162,25 +2147,25 @@ export class LocationDto implements ILocationDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["locationFacility"] = this.locationFacility !== undefined ? this.locationFacility : <any>null;
-        data["locationCity"] = this.locationCity !== undefined ? this.locationCity : <any>null;
-        data["locationState"] = this.locationState !== undefined ? this.locationState : <any>null;
-        data["locationZip"] = this.locationZip !== undefined ? this.locationZip : <any>null;
-        data["locationCountry"] = this.locationCountry !== undefined ? this.locationCountry : <any>null;
+        data["locationFacility"] = this.locationFacility;
+        data["locationCity"] = this.locationCity;
+        data["locationState"] = this.locationState;
+        data["locationZip"] = this.locationZip;
+        data["locationCountry"] = this.locationCountry;
         return data; 
     }
 }
 
 export interface ILocationDto {
-    locationFacility?: string | null;
-    locationCity?: string | null;
-    locationState?: string | null;
-    locationZip?: string | null;
-    locationCountry?: string | null;
+    locationFacility?: string | undefined;
+    locationCity?: string | undefined;
+    locationState?: string | undefined;
+    locationZip?: string | undefined;
+    locationCountry?: string | undefined;
 }
 
 export class ReferencesmoduleDto implements IReferencesmoduleDto {
-    referenceList?: ReferencelistDto | null;
+    referenceList?: ReferencelistDto | undefined;
 
     constructor(data?: IReferencesmoduleDto) {
         if (data) {
@@ -2193,7 +2178,7 @@ export class ReferencesmoduleDto implements IReferencesmoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.referenceList = _data["referenceList"] ? ReferencelistDto.fromJS(_data["referenceList"]) : <any>null;
+            this.referenceList = _data["referenceList"] ? ReferencelistDto.fromJS(_data["referenceList"]) : <any>undefined;
         }
     }
 
@@ -2206,17 +2191,17 @@ export class ReferencesmoduleDto implements IReferencesmoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["referenceList"] = this.referenceList ? this.referenceList.toJSON() : <any>null;
+        data["referenceList"] = this.referenceList ? this.referenceList.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IReferencesmoduleDto {
-    referenceList?: ReferencelistDto | null;
+    referenceList?: ReferencelistDto | undefined;
 }
 
 export class ReferencelistDto implements IReferencelistDto {
-    reference?: ReferenceDto[] | null;
+    reference?: ReferenceDto[] | undefined;
 
     constructor(data?: IReferencelistDto) {
         if (data) {
@@ -2256,13 +2241,13 @@ export class ReferencelistDto implements IReferencelistDto {
 }
 
 export interface IReferencelistDto {
-    reference?: ReferenceDto[] | null;
+    reference?: ReferenceDto[] | undefined;
 }
 
 export class ReferenceDto implements IReferenceDto {
-    referencePMID?: string | null;
-    referenceType?: string | null;
-    referenceCitation?: string | null;
+    referencePMID?: string | undefined;
+    referenceType?: string | undefined;
+    referenceCitation?: string | undefined;
 
     constructor(data?: IReferenceDto) {
         if (data) {
@@ -2275,9 +2260,9 @@ export class ReferenceDto implements IReferenceDto {
 
     init(_data?: any) {
         if (_data) {
-            this.referencePMID = _data["referencePMID"] !== undefined ? _data["referencePMID"] : <any>null;
-            this.referenceType = _data["referenceType"] !== undefined ? _data["referenceType"] : <any>null;
-            this.referenceCitation = _data["referenceCitation"] !== undefined ? _data["referenceCitation"] : <any>null;
+            this.referencePMID = _data["referencePMID"];
+            this.referenceType = _data["referenceType"];
+            this.referenceCitation = _data["referenceCitation"];
         }
     }
 
@@ -2290,22 +2275,22 @@ export class ReferenceDto implements IReferenceDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["referencePMID"] = this.referencePMID !== undefined ? this.referencePMID : <any>null;
-        data["referenceType"] = this.referenceType !== undefined ? this.referenceType : <any>null;
-        data["referenceCitation"] = this.referenceCitation !== undefined ? this.referenceCitation : <any>null;
+        data["referencePMID"] = this.referencePMID;
+        data["referenceType"] = this.referenceType;
+        data["referenceCitation"] = this.referenceCitation;
         return data; 
     }
 }
 
 export interface IReferenceDto {
-    referencePMID?: string | null;
-    referenceType?: string | null;
-    referenceCitation?: string | null;
+    referencePMID?: string | undefined;
+    referenceType?: string | undefined;
+    referenceCitation?: string | undefined;
 }
 
 export class DerivedsectionDto implements IDerivedsectionDto {
-    miscInfoModule?: MiscinfomoduleDto | null;
-    conditionBrowseModule?: ConditionbrowsemoduleDto | null;
+    miscInfoModule?: MiscinfomoduleDto | undefined;
+    conditionBrowseModule?: ConditionbrowsemoduleDto | undefined;
 
     constructor(data?: IDerivedsectionDto) {
         if (data) {
@@ -2318,8 +2303,8 @@ export class DerivedsectionDto implements IDerivedsectionDto {
 
     init(_data?: any) {
         if (_data) {
-            this.miscInfoModule = _data["miscInfoModule"] ? MiscinfomoduleDto.fromJS(_data["miscInfoModule"]) : <any>null;
-            this.conditionBrowseModule = _data["conditionBrowseModule"] ? ConditionbrowsemoduleDto.fromJS(_data["conditionBrowseModule"]) : <any>null;
+            this.miscInfoModule = _data["miscInfoModule"] ? MiscinfomoduleDto.fromJS(_data["miscInfoModule"]) : <any>undefined;
+            this.conditionBrowseModule = _data["conditionBrowseModule"] ? ConditionbrowsemoduleDto.fromJS(_data["conditionBrowseModule"]) : <any>undefined;
         }
     }
 
@@ -2332,19 +2317,19 @@ export class DerivedsectionDto implements IDerivedsectionDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["miscInfoModule"] = this.miscInfoModule ? this.miscInfoModule.toJSON() : <any>null;
-        data["conditionBrowseModule"] = this.conditionBrowseModule ? this.conditionBrowseModule.toJSON() : <any>null;
+        data["miscInfoModule"] = this.miscInfoModule ? this.miscInfoModule.toJSON() : <any>undefined;
+        data["conditionBrowseModule"] = this.conditionBrowseModule ? this.conditionBrowseModule.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IDerivedsectionDto {
-    miscInfoModule?: MiscinfomoduleDto | null;
-    conditionBrowseModule?: ConditionbrowsemoduleDto | null;
+    miscInfoModule?: MiscinfomoduleDto | undefined;
+    conditionBrowseModule?: ConditionbrowsemoduleDto | undefined;
 }
 
 export class MiscinfomoduleDto implements IMiscinfomoduleDto {
-    versionHolder?: string | null;
+    versionHolder?: string | undefined;
 
     constructor(data?: IMiscinfomoduleDto) {
         if (data) {
@@ -2357,7 +2342,7 @@ export class MiscinfomoduleDto implements IMiscinfomoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.versionHolder = _data["versionHolder"] !== undefined ? _data["versionHolder"] : <any>null;
+            this.versionHolder = _data["versionHolder"];
         }
     }
 
@@ -2370,20 +2355,20 @@ export class MiscinfomoduleDto implements IMiscinfomoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["versionHolder"] = this.versionHolder !== undefined ? this.versionHolder : <any>null;
+        data["versionHolder"] = this.versionHolder;
         return data; 
     }
 }
 
 export interface IMiscinfomoduleDto {
-    versionHolder?: string | null;
+    versionHolder?: string | undefined;
 }
 
 export class ConditionbrowsemoduleDto implements IConditionbrowsemoduleDto {
-    conditionMeshList?: ConditionmeshlistDto | null;
-    conditionAncestorList?: ConditionancestorlistDto | null;
-    conditionBrowseLeafList?: ConditionbrowseleaflistDto | null;
-    conditionBrowseBranchList?: ConditionbrowsebranchlistDto | null;
+    conditionMeshList?: ConditionmeshlistDto | undefined;
+    conditionAncestorList?: ConditionancestorlistDto | undefined;
+    conditionBrowseLeafList?: ConditionbrowseleaflistDto | undefined;
+    conditionBrowseBranchList?: ConditionbrowsebranchlistDto | undefined;
 
     constructor(data?: IConditionbrowsemoduleDto) {
         if (data) {
@@ -2396,10 +2381,10 @@ export class ConditionbrowsemoduleDto implements IConditionbrowsemoduleDto {
 
     init(_data?: any) {
         if (_data) {
-            this.conditionMeshList = _data["conditionMeshList"] ? ConditionmeshlistDto.fromJS(_data["conditionMeshList"]) : <any>null;
-            this.conditionAncestorList = _data["conditionAncestorList"] ? ConditionancestorlistDto.fromJS(_data["conditionAncestorList"]) : <any>null;
-            this.conditionBrowseLeafList = _data["conditionBrowseLeafList"] ? ConditionbrowseleaflistDto.fromJS(_data["conditionBrowseLeafList"]) : <any>null;
-            this.conditionBrowseBranchList = _data["conditionBrowseBranchList"] ? ConditionbrowsebranchlistDto.fromJS(_data["conditionBrowseBranchList"]) : <any>null;
+            this.conditionMeshList = _data["conditionMeshList"] ? ConditionmeshlistDto.fromJS(_data["conditionMeshList"]) : <any>undefined;
+            this.conditionAncestorList = _data["conditionAncestorList"] ? ConditionancestorlistDto.fromJS(_data["conditionAncestorList"]) : <any>undefined;
+            this.conditionBrowseLeafList = _data["conditionBrowseLeafList"] ? ConditionbrowseleaflistDto.fromJS(_data["conditionBrowseLeafList"]) : <any>undefined;
+            this.conditionBrowseBranchList = _data["conditionBrowseBranchList"] ? ConditionbrowsebranchlistDto.fromJS(_data["conditionBrowseBranchList"]) : <any>undefined;
         }
     }
 
@@ -2412,23 +2397,23 @@ export class ConditionbrowsemoduleDto implements IConditionbrowsemoduleDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["conditionMeshList"] = this.conditionMeshList ? this.conditionMeshList.toJSON() : <any>null;
-        data["conditionAncestorList"] = this.conditionAncestorList ? this.conditionAncestorList.toJSON() : <any>null;
-        data["conditionBrowseLeafList"] = this.conditionBrowseLeafList ? this.conditionBrowseLeafList.toJSON() : <any>null;
-        data["conditionBrowseBranchList"] = this.conditionBrowseBranchList ? this.conditionBrowseBranchList.toJSON() : <any>null;
+        data["conditionMeshList"] = this.conditionMeshList ? this.conditionMeshList.toJSON() : <any>undefined;
+        data["conditionAncestorList"] = this.conditionAncestorList ? this.conditionAncestorList.toJSON() : <any>undefined;
+        data["conditionBrowseLeafList"] = this.conditionBrowseLeafList ? this.conditionBrowseLeafList.toJSON() : <any>undefined;
+        data["conditionBrowseBranchList"] = this.conditionBrowseBranchList ? this.conditionBrowseBranchList.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IConditionbrowsemoduleDto {
-    conditionMeshList?: ConditionmeshlistDto | null;
-    conditionAncestorList?: ConditionancestorlistDto | null;
-    conditionBrowseLeafList?: ConditionbrowseleaflistDto | null;
-    conditionBrowseBranchList?: ConditionbrowsebranchlistDto | null;
+    conditionMeshList?: ConditionmeshlistDto | undefined;
+    conditionAncestorList?: ConditionancestorlistDto | undefined;
+    conditionBrowseLeafList?: ConditionbrowseleaflistDto | undefined;
+    conditionBrowseBranchList?: ConditionbrowsebranchlistDto | undefined;
 }
 
 export class ConditionmeshlistDto implements IConditionmeshlistDto {
-    conditionMesh?: ConditionmeshDto[] | null;
+    conditionMesh?: ConditionmeshDto[] | undefined;
 
     constructor(data?: IConditionmeshlistDto) {
         if (data) {
@@ -2468,12 +2453,12 @@ export class ConditionmeshlistDto implements IConditionmeshlistDto {
 }
 
 export interface IConditionmeshlistDto {
-    conditionMesh?: ConditionmeshDto[] | null;
+    conditionMesh?: ConditionmeshDto[] | undefined;
 }
 
 export class ConditionmeshDto implements IConditionmeshDto {
-    conditionMeshId?: string | null;
-    conditionMeshTerm?: string | null;
+    conditionMeshId?: string | undefined;
+    conditionMeshTerm?: string | undefined;
 
     constructor(data?: IConditionmeshDto) {
         if (data) {
@@ -2486,8 +2471,8 @@ export class ConditionmeshDto implements IConditionmeshDto {
 
     init(_data?: any) {
         if (_data) {
-            this.conditionMeshId = _data["conditionMeshId"] !== undefined ? _data["conditionMeshId"] : <any>null;
-            this.conditionMeshTerm = _data["conditionMeshTerm"] !== undefined ? _data["conditionMeshTerm"] : <any>null;
+            this.conditionMeshId = _data["conditionMeshId"];
+            this.conditionMeshTerm = _data["conditionMeshTerm"];
         }
     }
 
@@ -2500,19 +2485,19 @@ export class ConditionmeshDto implements IConditionmeshDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["conditionMeshId"] = this.conditionMeshId !== undefined ? this.conditionMeshId : <any>null;
-        data["conditionMeshTerm"] = this.conditionMeshTerm !== undefined ? this.conditionMeshTerm : <any>null;
+        data["conditionMeshId"] = this.conditionMeshId;
+        data["conditionMeshTerm"] = this.conditionMeshTerm;
         return data; 
     }
 }
 
 export interface IConditionmeshDto {
-    conditionMeshId?: string | null;
-    conditionMeshTerm?: string | null;
+    conditionMeshId?: string | undefined;
+    conditionMeshTerm?: string | undefined;
 }
 
 export class ConditionancestorlistDto implements IConditionancestorlistDto {
-    conditionAncestor?: ConditionancestorDto[] | null;
+    conditionAncestor?: ConditionancestorDto[] | undefined;
 
     constructor(data?: IConditionancestorlistDto) {
         if (data) {
@@ -2552,12 +2537,12 @@ export class ConditionancestorlistDto implements IConditionancestorlistDto {
 }
 
 export interface IConditionancestorlistDto {
-    conditionAncestor?: ConditionancestorDto[] | null;
+    conditionAncestor?: ConditionancestorDto[] | undefined;
 }
 
 export class ConditionancestorDto implements IConditionancestorDto {
-    conditionAncestorId?: string | null;
-    conditionAncestorTerm?: string | null;
+    conditionAncestorId?: string | undefined;
+    conditionAncestorTerm?: string | undefined;
 
     constructor(data?: IConditionancestorDto) {
         if (data) {
@@ -2570,8 +2555,8 @@ export class ConditionancestorDto implements IConditionancestorDto {
 
     init(_data?: any) {
         if (_data) {
-            this.conditionAncestorId = _data["conditionAncestorId"] !== undefined ? _data["conditionAncestorId"] : <any>null;
-            this.conditionAncestorTerm = _data["conditionAncestorTerm"] !== undefined ? _data["conditionAncestorTerm"] : <any>null;
+            this.conditionAncestorId = _data["conditionAncestorId"];
+            this.conditionAncestorTerm = _data["conditionAncestorTerm"];
         }
     }
 
@@ -2584,19 +2569,19 @@ export class ConditionancestorDto implements IConditionancestorDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["conditionAncestorId"] = this.conditionAncestorId !== undefined ? this.conditionAncestorId : <any>null;
-        data["conditionAncestorTerm"] = this.conditionAncestorTerm !== undefined ? this.conditionAncestorTerm : <any>null;
+        data["conditionAncestorId"] = this.conditionAncestorId;
+        data["conditionAncestorTerm"] = this.conditionAncestorTerm;
         return data; 
     }
 }
 
 export interface IConditionancestorDto {
-    conditionAncestorId?: string | null;
-    conditionAncestorTerm?: string | null;
+    conditionAncestorId?: string | undefined;
+    conditionAncestorTerm?: string | undefined;
 }
 
 export class ConditionbrowseleaflistDto implements IConditionbrowseleaflistDto {
-    conditionBrowseLeaf?: ConditionbrowseleafDto[] | null;
+    conditionBrowseLeaf?: ConditionbrowseleafDto[] | undefined;
 
     constructor(data?: IConditionbrowseleaflistDto) {
         if (data) {
@@ -2636,14 +2621,14 @@ export class ConditionbrowseleaflistDto implements IConditionbrowseleaflistDto {
 }
 
 export interface IConditionbrowseleaflistDto {
-    conditionBrowseLeaf?: ConditionbrowseleafDto[] | null;
+    conditionBrowseLeaf?: ConditionbrowseleafDto[] | undefined;
 }
 
 export class ConditionbrowseleafDto implements IConditionbrowseleafDto {
-    conditionBrowseLeafId?: string | null;
-    conditionBrowseLeafName?: string | null;
-    conditionBrowseLeafAsFound?: string | null;
-    conditionBrowseLeafRelevance?: string | null;
+    conditionBrowseLeafId?: string | undefined;
+    conditionBrowseLeafName?: string | undefined;
+    conditionBrowseLeafAsFound?: string | undefined;
+    conditionBrowseLeafRelevance?: string | undefined;
 
     constructor(data?: IConditionbrowseleafDto) {
         if (data) {
@@ -2656,10 +2641,10 @@ export class ConditionbrowseleafDto implements IConditionbrowseleafDto {
 
     init(_data?: any) {
         if (_data) {
-            this.conditionBrowseLeafId = _data["conditionBrowseLeafId"] !== undefined ? _data["conditionBrowseLeafId"] : <any>null;
-            this.conditionBrowseLeafName = _data["conditionBrowseLeafName"] !== undefined ? _data["conditionBrowseLeafName"] : <any>null;
-            this.conditionBrowseLeafAsFound = _data["conditionBrowseLeafAsFound"] !== undefined ? _data["conditionBrowseLeafAsFound"] : <any>null;
-            this.conditionBrowseLeafRelevance = _data["conditionBrowseLeafRelevance"] !== undefined ? _data["conditionBrowseLeafRelevance"] : <any>null;
+            this.conditionBrowseLeafId = _data["conditionBrowseLeafId"];
+            this.conditionBrowseLeafName = _data["conditionBrowseLeafName"];
+            this.conditionBrowseLeafAsFound = _data["conditionBrowseLeafAsFound"];
+            this.conditionBrowseLeafRelevance = _data["conditionBrowseLeafRelevance"];
         }
     }
 
@@ -2672,23 +2657,23 @@ export class ConditionbrowseleafDto implements IConditionbrowseleafDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["conditionBrowseLeafId"] = this.conditionBrowseLeafId !== undefined ? this.conditionBrowseLeafId : <any>null;
-        data["conditionBrowseLeafName"] = this.conditionBrowseLeafName !== undefined ? this.conditionBrowseLeafName : <any>null;
-        data["conditionBrowseLeafAsFound"] = this.conditionBrowseLeafAsFound !== undefined ? this.conditionBrowseLeafAsFound : <any>null;
-        data["conditionBrowseLeafRelevance"] = this.conditionBrowseLeafRelevance !== undefined ? this.conditionBrowseLeafRelevance : <any>null;
+        data["conditionBrowseLeafId"] = this.conditionBrowseLeafId;
+        data["conditionBrowseLeafName"] = this.conditionBrowseLeafName;
+        data["conditionBrowseLeafAsFound"] = this.conditionBrowseLeafAsFound;
+        data["conditionBrowseLeafRelevance"] = this.conditionBrowseLeafRelevance;
         return data; 
     }
 }
 
 export interface IConditionbrowseleafDto {
-    conditionBrowseLeafId?: string | null;
-    conditionBrowseLeafName?: string | null;
-    conditionBrowseLeafAsFound?: string | null;
-    conditionBrowseLeafRelevance?: string | null;
+    conditionBrowseLeafId?: string | undefined;
+    conditionBrowseLeafName?: string | undefined;
+    conditionBrowseLeafAsFound?: string | undefined;
+    conditionBrowseLeafRelevance?: string | undefined;
 }
 
 export class ConditionbrowsebranchlistDto implements IConditionbrowsebranchlistDto {
-    conditionBrowseBranch?: ConditionbrowsebranchDto[] | null;
+    conditionBrowseBranch?: ConditionbrowsebranchDto[] | undefined;
 
     constructor(data?: IConditionbrowsebranchlistDto) {
         if (data) {
@@ -2728,12 +2713,12 @@ export class ConditionbrowsebranchlistDto implements IConditionbrowsebranchlistD
 }
 
 export interface IConditionbrowsebranchlistDto {
-    conditionBrowseBranch?: ConditionbrowsebranchDto[] | null;
+    conditionBrowseBranch?: ConditionbrowsebranchDto[] | undefined;
 }
 
 export class ConditionbrowsebranchDto implements IConditionbrowsebranchDto {
-    conditionBrowseBranchAbbrev?: string | null;
-    conditionBrowseBranchName?: string | null;
+    conditionBrowseBranchAbbrev?: string | undefined;
+    conditionBrowseBranchName?: string | undefined;
 
     constructor(data?: IConditionbrowsebranchDto) {
         if (data) {
@@ -2746,8 +2731,8 @@ export class ConditionbrowsebranchDto implements IConditionbrowsebranchDto {
 
     init(_data?: any) {
         if (_data) {
-            this.conditionBrowseBranchAbbrev = _data["conditionBrowseBranchAbbrev"] !== undefined ? _data["conditionBrowseBranchAbbrev"] : <any>null;
-            this.conditionBrowseBranchName = _data["conditionBrowseBranchName"] !== undefined ? _data["conditionBrowseBranchName"] : <any>null;
+            this.conditionBrowseBranchAbbrev = _data["conditionBrowseBranchAbbrev"];
+            this.conditionBrowseBranchName = _data["conditionBrowseBranchName"];
         }
     }
 
@@ -2760,24 +2745,72 @@ export class ConditionbrowsebranchDto implements IConditionbrowsebranchDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["conditionBrowseBranchAbbrev"] = this.conditionBrowseBranchAbbrev !== undefined ? this.conditionBrowseBranchAbbrev : <any>null;
-        data["conditionBrowseBranchName"] = this.conditionBrowseBranchName !== undefined ? this.conditionBrowseBranchName : <any>null;
+        data["conditionBrowseBranchAbbrev"] = this.conditionBrowseBranchAbbrev;
+        data["conditionBrowseBranchName"] = this.conditionBrowseBranchName;
         return data; 
     }
 }
 
 export interface IConditionbrowsebranchDto {
-    conditionBrowseBranchAbbrev?: string | null;
-    conditionBrowseBranchName?: string | null;
+    conditionBrowseBranchAbbrev?: string | undefined;
+    conditionBrowseBranchName?: string | undefined;
+}
+
+export class PaginatedFullStudies implements IPaginatedFullStudies {
+    fullStudies?: FullStudyViewDto[] | undefined;
+    pagination?: Pagination | undefined;
+
+    constructor(data?: IPaginatedFullStudies) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["fullStudies"])) {
+                this.fullStudies = [] as any;
+                for (let item of _data["fullStudies"])
+                    this.fullStudies!.push(FullStudyViewDto.fromJS(item));
+            }
+            this.pagination = _data["pagination"] ? Pagination.fromJS(_data["pagination"]) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): PaginatedFullStudies {
+        data = typeof data === 'object' ? data : {};
+        let result = new PaginatedFullStudies();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.fullStudies)) {
+            data["fullStudies"] = [];
+            for (let item of this.fullStudies)
+                data["fullStudies"].push(item.toJSON());
+        }
+        data["pagination"] = this.pagination ? this.pagination.toJSON() : <any>undefined;
+        return data; 
+    }
+}
+
+export interface IPaginatedFullStudies {
+    fullStudies?: FullStudyViewDto[] | undefined;
+    pagination?: Pagination | undefined;
 }
 
 export class FullStudyViewDto implements IFullStudyViewDto {
-    nctId?: string | null;
-    title?: string | null;
-    organizationName?: string | null;
-    status?: Status | null;
-    briefSummary?: string | null;
-    location?: LocationDto | null;
+    nctId?: string | undefined;
+    title?: string | undefined;
+    organizationName?: string | undefined;
+    status?: string | undefined;
+    briefSummary?: string | undefined;
+    location?: LocationDto | undefined;
 
     constructor(data?: IFullStudyViewDto) {
         if (data) {
@@ -2790,12 +2823,12 @@ export class FullStudyViewDto implements IFullStudyViewDto {
 
     init(_data?: any) {
         if (_data) {
-            this.nctId = _data["nctId"] !== undefined ? _data["nctId"] : <any>null;
-            this.title = _data["title"] !== undefined ? _data["title"] : <any>null;
-            this.organizationName = _data["organizationName"] !== undefined ? _data["organizationName"] : <any>null;
-            this.status = _data["status"] ? Status.fromJS(_data["status"]) : <any>null;
-            this.briefSummary = _data["briefSummary"] !== undefined ? _data["briefSummary"] : <any>null;
-            this.location = _data["location"] ? LocationDto.fromJS(_data["location"]) : <any>null;
+            this.nctId = _data["nctId"];
+            this.title = _data["title"];
+            this.organizationName = _data["organizationName"];
+            this.status = _data["status"];
+            this.briefSummary = _data["briefSummary"];
+            this.location = _data["location"] ? LocationDto.fromJS(_data["location"]) : <any>undefined;
         }
     }
 
@@ -2808,28 +2841,72 @@ export class FullStudyViewDto implements IFullStudyViewDto {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["nctId"] = this.nctId !== undefined ? this.nctId : <any>null;
-        data["title"] = this.title !== undefined ? this.title : <any>null;
-        data["organizationName"] = this.organizationName !== undefined ? this.organizationName : <any>null;
-        data["status"] = this.status ? this.status.toJSON() : <any>null;
-        data["briefSummary"] = this.briefSummary !== undefined ? this.briefSummary : <any>null;
-        data["location"] = this.location ? this.location.toJSON() : <any>null;
+        data["nctId"] = this.nctId;
+        data["title"] = this.title;
+        data["organizationName"] = this.organizationName;
+        data["status"] = this.status;
+        data["briefSummary"] = this.briefSummary;
+        data["location"] = this.location ? this.location.toJSON() : <any>undefined;
         return data; 
     }
 }
 
 export interface IFullStudyViewDto {
-    nctId?: string | null;
-    title?: string | null;
-    organizationName?: string | null;
-    status?: Status | null;
-    briefSummary?: string | null;
-    location?: LocationDto | null;
+    nctId?: string | undefined;
+    title?: string | undefined;
+    organizationName?: string | undefined;
+    status?: string | undefined;
+    briefSummary?: string | undefined;
+    location?: LocationDto | undefined;
+}
+
+export class Pagination implements IPagination {
+    skip!: number;
+    take!: number;
+    totalItems!: number;
+
+    constructor(data?: IPagination) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.skip = _data["skip"];
+            this.take = _data["take"];
+            this.totalItems = _data["totalItems"];
+        }
+    }
+
+    static fromJS(data: any): Pagination {
+        data = typeof data === 'object' ? data : {};
+        let result = new Pagination();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["skip"] = this.skip;
+        data["take"] = this.take;
+        data["totalItems"] = this.totalItems;
+        return data; 
+    }
+}
+
+export interface IPagination {
+    skip: number;
+    take: number;
+    totalItems: number;
 }
 
 export abstract class Enumeration implements IEnumeration {
-    value?: string | null;
-    description?: string | null;
+    value?: string | undefined;
+    description?: string | undefined;
 
     constructor(data?: IEnumeration) {
         if (data) {
@@ -2842,8 +2919,8 @@ export abstract class Enumeration implements IEnumeration {
 
     init(_data?: any) {
         if (_data) {
-            this.value = _data["value"] !== undefined ? _data["value"] : <any>null;
-            this.description = _data["description"] !== undefined ? _data["description"] : <any>null;
+            this.value = _data["value"];
+            this.description = _data["description"];
         }
     }
 
@@ -2854,15 +2931,15 @@ export abstract class Enumeration implements IEnumeration {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["value"] = this.value !== undefined ? this.value : <any>null;
-        data["description"] = this.description !== undefined ? this.description : <any>null;
+        data["value"] = this.value;
+        data["description"] = this.description;
         return data; 
     }
 }
 
 export interface IEnumeration {
-    value?: string | null;
-    description?: string | null;
+    value?: string | undefined;
+    description?: string | undefined;
 }
 
 export class Status extends Enumeration implements IStatus {

@@ -13,7 +13,7 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
     {
         // TODO TTL?
         private readonly Dictionary<string, FullStudyDto> _fullStudyCache = new();
-        private readonly IFullStudiesClient _fullStudiesClient; 
+        private readonly IFullStudiesClient _fullStudiesClient;
         public FullStudyRepository(IFullStudiesClient fullStudiesClient)
         {
             _fullStudiesClient = fullStudiesClient;
@@ -30,20 +30,20 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
             if (_fullStudyCache.TryGetValue(nctIdentifier, out var result))
                 return result;
 
-            var foundStudies = await _fullStudiesClient.GetFullStudiesAsync(nctIdentifier, 1, 1);
+            var foundStudies = await _fullStudiesClient.GetFullStudiesAsync(nctIdentifier, 0, 1);
 
             if (foundStudies is null)
                 return null;
 
-            var foundStudy = foundStudies.SingleOrDefault();
+            var foundStudy = foundStudies.FullStudies.SingleOrDefault();
             if (foundStudy != null)
                 _fullStudyCache.Add(nctIdentifier, foundStudy);
 
             return foundStudy;
         }
 
-        public async Task<IEnumerable<FullStudyDto>> GetPaginatedFullStudies(int skip, int take, IEnumerable<string> keywords,
-            string location = null, string status = null, string gender = null, DateTime? dateOfBirth = null)
+        public async Task<PaginatedFullStudyDto> GetPaginatedFullStudies(int skip, int take, IEnumerable<string> keywords,
+            string location = null, IEnumerable<string> filterStatuses = null, string gender = null)
         {
             if (skip < 0)
                 throw new ArgumentException($"{nameof(skip)} cannot be negative!");
@@ -51,25 +51,32 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
             if (take < 0)
                 throw new ArgumentException($"{nameof(take)} cannot be negative!");
 
-            if (!keywords.Any())
-                throw new ArgumentException($"{nameof(keywords)} cannot be empty!");
+            if (!keywords.Any(k => !string.IsNullOrWhiteSpace(k)))
+                throw new ArgumentException($"{nameof(keywords)} cannot be empty!");            
 
-            var minRank = skip + 1;
-            var maxRank = (minRank + take) - 1;
-
-            var keywordInclusiveClauseSb = new StringBuilder(string.Join(" OR ", keywords));
+            var keywordInclusiveClauseSb = new StringBuilder("(");
+            keywordInclusiveClauseSb.Append(string.Join(" OR ", keywords));
+            keywordInclusiveClauseSb.Append(')');
 
             if (!string.IsNullOrWhiteSpace(location))
-            {
-                keywordInclusiveClauseSb.Insert(0, '(');
-                keywordInclusiveClauseSb.Append(')');
                 keywordInclusiveClauseSb.Append($" AND (SEARCH[Location] ({location}))");
+
+            if (!string.IsNullOrWhiteSpace(gender) && (gender.Equals("Male", StringComparison.OrdinalIgnoreCase) || gender.Equals("Female",  StringComparison.OrdinalIgnoreCase)))
+                keywordInclusiveClauseSb.Append($" AND (EXPANSION[None]AREA[Gender]\"{gender}\")");
+
+            if (filterStatuses != null && filterStatuses.Any(s => !string.IsNullOrWhiteSpace(s)))
+            {
+                var nonEmptyFilterStatuses = filterStatuses.Where(s => !string.IsNullOrWhiteSpace(s));
+
+                keywordInclusiveClauseSb.Append(" AND (EXPANSION[None]AREA[OverallStatus]\"");
+                keywordInclusiveClauseSb.Append(string.Join("\" OR EXPANSION[None]AREA[OverallStatus]\"", nonEmptyFilterStatuses));
+                keywordInclusiveClauseSb.Append("\")");
             }
 
-            var foundStudies = await _fullStudiesClient.GetFullStudiesAsync(keywordInclusiveClauseSb.ToString(), minRank, maxRank);
+            var foundStudies = await _fullStudiesClient.GetFullStudiesAsync(keywordInclusiveClauseSb.ToString(), skip, take);
 
             return foundStudies;
-        }       
+        }
 
     }
 }
