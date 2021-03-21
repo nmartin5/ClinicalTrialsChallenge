@@ -1,4 +1,4 @@
-﻿using ClinicalTrialsChallengeApi.Model.Core;
+﻿using ClinicalTrialsChallengeApi.Domain.Model.Core;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 

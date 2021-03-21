@@ -1,4 +1,5 @@
-﻿using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
+﻿using ClinicalTrialsChallengeApi.Domain.UseCase;
+using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 

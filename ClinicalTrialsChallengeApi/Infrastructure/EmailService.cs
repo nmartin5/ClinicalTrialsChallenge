@@ -1,6 +1,6 @@
 ﻿using ClinicalTrialsChallengeApi.Configuration;
+using ClinicalTrialsChallengeApi.Domain.Model.Notification;
 using ClinicalTrialsChallengeApi.Exceptions;
-using ClinicalTrialsChallengeApi.Model.Notification;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OneOf.Types;

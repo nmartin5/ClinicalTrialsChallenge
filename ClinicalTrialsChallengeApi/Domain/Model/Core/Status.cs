@@ -1,4 +1,4 @@
-﻿namespace ClinicalTrialsChallengeApi.Model.Core
+﻿namespace ClinicalTrialsChallengeApi.Domain.Model.Core
 {
     public class Status : Enumeration
     {

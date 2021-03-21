@@ -1,12 +1,12 @@
-﻿using ClinicalTrialsChallengeApi.Infrastructure;
+﻿using ClinicalTrialsChallengeApi.Domain.Model.Notification;
+using ClinicalTrialsChallengeApi.Infrastructure;
 using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
 using ClinicalTrialsChallengeApi.Infrastructure.Repository;
-using ClinicalTrialsChallengeApi.Model.Notification;
 using OneOf;
 using OneOf.Types;
 using System.Threading.Tasks;
 
-namespace ClinicalTrialsChallengeApi.Controllers
+namespace ClinicalTrialsChallengeApi.Domain.UseCase
 {
     public class SendContactUseCase : ISendContactUseCase
     {

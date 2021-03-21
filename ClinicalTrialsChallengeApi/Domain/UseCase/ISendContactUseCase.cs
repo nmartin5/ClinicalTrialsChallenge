@@ -3,7 +3,7 @@ using OneOf;
 using OneOf.Types;
 using System.Threading.Tasks;
 
-namespace ClinicalTrialsChallengeApi.Controllers
+namespace ClinicalTrialsChallengeApi.Domain.UseCase
 {
     public interface ISendContactUseCase
     {

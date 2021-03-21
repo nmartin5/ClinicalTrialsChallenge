@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace ClinicalTrialsChallengeApi.Model.Core
+namespace ClinicalTrialsChallengeApi.Domain.Model.Core
 {
     public abstract class Enumeration
     {

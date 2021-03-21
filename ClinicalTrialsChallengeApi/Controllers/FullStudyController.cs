@@ -2,13 +2,9 @@
 using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
 using ClinicalTrialsChallengeApi.Infrastructure.Dto.Response;
 using ClinicalTrialsChallengeApi.Infrastructure.Repository;
-using ClinicalTrialsChallengeApi.Model;
-using ClinicalTrialsChallengeApi.Model.Core;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 

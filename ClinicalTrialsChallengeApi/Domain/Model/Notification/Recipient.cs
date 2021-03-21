@@ -1,4 +1,4 @@
-﻿namespace ClinicalTrialsChallengeApi.Model.Notification
+﻿namespace ClinicalTrialsChallengeApi.Domain.Model.Notification
 {
     public class Recipient
     {

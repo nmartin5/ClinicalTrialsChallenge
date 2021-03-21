@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 
-namespace ClinicalTrialsChallengeApi.Model.Notification
+namespace ClinicalTrialsChallengeApi.Domain.Model.Notification
 {
     public class Attachment
     {

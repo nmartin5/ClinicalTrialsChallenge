@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ClinicalTrialsChallengeApi.Model.Notification
+namespace ClinicalTrialsChallengeApi.Domain.Model.Notification
 {
     public class Email
     {
