@@ -1,10 +1,9 @@
-﻿using ClinicalTrialsChallengeApi.Infrastructure.Dto;
-using ClinicalTrialsChallengeApi.Model;
+﻿using ClinicalTrialsChallengeApi.Infrastructure.Client;
+using ClinicalTrialsChallengeApi.Infrastructure.Dto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Json;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -12,13 +11,14 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
 {
     public class FullStudyRepository : IFullStudyRepository
     {
-        private Dictionary<string, FullStudy> _fullStudyCache = new Dictionary<string, FullStudy>();
-        private readonly HttpClient _httpClient;
-        public FullStudyRepository(HttpClient httpClient)
+        // TODO TTL?
+        private readonly Dictionary<string, FullStudyDto> _fullStudyCache = new();
+        private readonly IFullStudiesClient _fullStudiesClient; 
+        public FullStudyRepository(IFullStudiesClient fullStudiesClient)
         {
-            _httpClient = httpClient;
+            _fullStudiesClient = fullStudiesClient;
         }
-        public async Task<FullStudy> GetFullStudy(string nctIdentifier)
+        public async Task<FullStudyDto> GetFullStudy(string nctIdentifier)
         {
             if (string.IsNullOrWhiteSpace(nctIdentifier))
                 throw new ArgumentException($"{nameof(nctIdentifier)} is required!");
@@ -30,38 +30,46 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
             if (_fullStudyCache.TryGetValue(nctIdentifier, out var result))
                 return result;
 
-            // get the study via the api
-            var response = await _httpClient.GetAsync($"https://clinicaltrials.gov/api/query/full_studies?expr={nctIdentifier}&min_rnk=1&max_rnk=1&fmt=json");
-            response.EnsureSuccessStatusCode();
+            var foundStudies = await _fullStudiesClient.GetFullStudiesAsync(nctIdentifier, 1, 1);
 
-            if (response.Content is object)
-            {
-                var fullStudiesResponse = await response.Content.ReadFromJsonAsync<FullStudiesResponse>();
+            if (foundStudies is null)
+                return null;
 
-                if (fullStudiesResponse.NStudiesReturned == 0)
-                    return null;
+            var foundStudy = foundStudies.SingleOrDefault();
+            if (foundStudy != null)
+                _fullStudyCache.Add(nctIdentifier, foundStudy);
 
-                var studyDto = fullStudiesResponse.FullStudies.Single().Study;
-                FullStudy fullStudy = new FullStudy(); // TODO build per required fields
-                _fullStudyCache.Add(nctIdentifier, fullStudy);
-                return fullStudy;
-            }
-            else
-            {
-                throw new HttpRequestException("HTTP response was invalid and cannot be deserialized");
-            }
+            return foundStudy;
         }
 
-        private class FullStudiesResponse
+        public async Task<IEnumerable<FullStudyDto>> GetPaginatedFullStudies(int skip, int take, IEnumerable<string> keywords,
+            string location = null, string status = null, string gender = null, DateTime? dateOfBirth = null)
         {
-            public int NStudiesReturned { get; set; }
-            public IEnumerable<RankedFullStudyDto> FullStudies { get; set; }
-        }
+            if (skip < 0)
+                throw new ArgumentException($"{nameof(skip)} cannot be negative!");
 
-        private class RankedFullStudyDto
-        {
-            public StudyDto Study { get; set; }
-        }
+            if (take < 0)
+                throw new ArgumentException($"{nameof(take)} cannot be negative!");
+
+            if (!keywords.Any())
+                throw new ArgumentException($"{nameof(keywords)} cannot be empty!");
+
+            var minRank = skip + 1;
+            var maxRank = (minRank + take) - 1;
+
+            var keywordInclusiveClauseSb = new StringBuilder(string.Join(" OR ", keywords));
+
+            if (!string.IsNullOrWhiteSpace(location))
+            {
+                keywordInclusiveClauseSb.Insert(0, '(');
+                keywordInclusiveClauseSb.Append(')');
+                keywordInclusiveClauseSb.Append($" AND (SEARCH[Location] ({location}))");
+            }
+
+            var foundStudies = await _fullStudiesClient.GetFullStudiesAsync(keywordInclusiveClauseSb.ToString(), minRank, maxRank);
+
+            return foundStudies;
+        }       
 
     }
 }

@@ -1,5 +1,6 @@
 using ClinicalTrialsChallengeApi.Configuration.Installer;
 using ClinicalTrialsChallengeApi.Infrastructure;
+using ClinicalTrialsChallengeApi.Infrastructure.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +12,7 @@ namespace ClinicalTrialsChallengeApi
 {
     public class Startup
     {
+        private readonly string AllowAllCors = "_allowAllCors";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -24,6 +26,18 @@ namespace ClinicalTrialsChallengeApi
             services.ConfigureOpenApi();
             services.AddHttpClient();
             services.ConfigureRepositories();
+            services.AddScoped<IFullStudiesClient, FullStudiesClient>();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: AllowAllCors,
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin()
+                            .AllowAnyHeader()
+                            .AllowAnyMethod();
+                    });
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -41,6 +55,7 @@ namespace ClinicalTrialsChallengeApi
             app.UseRouting();
 
             app.UseAuthorization();
+            app.UseCors(AllowAllCors);
             app.UseMiddleware<ExceptionHandlerMiddleware>();
 
             app.UseEndpoints(endpoints =>
