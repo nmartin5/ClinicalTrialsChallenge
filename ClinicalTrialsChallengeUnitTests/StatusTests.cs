@@ -1,5 +1,4 @@
-﻿using ClinicalTrialsChallengeApi.Model;
-using ClinicalTrialsChallengeApi.Model.Core;
+﻿using ClinicalTrialsChallengeApi.Model.Core;
 using NUnit.Framework;
 using System.Linq;
 
