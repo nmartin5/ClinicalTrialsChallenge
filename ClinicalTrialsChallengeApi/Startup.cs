@@ -1,5 +1,6 @@
 using ClinicalTrialsChallengeApi.Configuration;
 using ClinicalTrialsChallengeApi.Configuration.Installer;
+using ClinicalTrialsChallengeApi.Domain.UseCase;
 using ClinicalTrialsChallengeApi.Infrastructure;
 using ClinicalTrialsChallengeApi.Infrastructure.Client;
 using Microsoft.AspNetCore.Builder;
@@ -30,6 +31,8 @@ namespace ClinicalTrialsChallengeApi
             services.AddScoped<IFullStudiesClient, FullStudiesClient>();
             services.Configure<EmailOptions>(options => Configuration.GetSection(nameof(EmailOptions)).Bind(options));
             services.AddScoped<ISendEmailService, EmailService>();
+            services.AddScoped<ISendContactUseCase, SendContactUseCase>();
+            services.AddScoped<IVCardSerializer, VCard4Serializer>();
 
             services.AddCors(options =>
             {

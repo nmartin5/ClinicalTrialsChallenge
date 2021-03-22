@@ -4,5 +4,6 @@
     {
         public OverallofficiallistDto OverallOfficialList { get; set; }
         public LocationlistDto LocationList { get; set; }
+        public CentralcontactlistDto CentralContactList { get; set; }
     }
 }

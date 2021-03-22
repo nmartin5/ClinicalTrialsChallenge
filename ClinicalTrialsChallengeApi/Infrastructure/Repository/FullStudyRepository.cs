@@ -18,7 +18,7 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
         {
             _fullStudiesClient = fullStudiesClient;
         }
-        public async Task<FullStudyDto> GetFullStudy(string nctIdentifier)
+        public async Task<FullStudyDto> GetFullStudyAsync(string nctIdentifier)
         {
             if (string.IsNullOrWhiteSpace(nctIdentifier))
                 throw new ArgumentException($"{nameof(nctIdentifier)} is required!");
@@ -30,12 +30,14 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
             if (_fullStudyCache.TryGetValue(nctIdentifier, out var result))
                 return result;
 
-            var foundStudies = await _fullStudiesClient.GetFullStudiesAsync(nctIdentifier, 0, 1);
+            var expression = $"EXPANSION[None]AREA[NCTId]\"{nctIdentifier}\"";
+
+            var foundStudies = await _fullStudiesClient.GetFullStudiesAsync(expression, 0, 1);
 
             if (foundStudies is null)
                 return null;
 
-            var foundStudy = foundStudies.FullStudies.SingleOrDefault();
+            var foundStudy = foundStudies.FullStudies.SingleOrDefault(s => s.ProtocolSection.IdentificationModule.NCTId.Equals(nctIdentifier));
             if (foundStudy != null)
                 _fullStudyCache.Add(nctIdentifier, foundStudy);
 

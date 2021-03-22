@@ -29,7 +29,7 @@ namespace ClinicalTrialsChallengeApi.Controllers
             FullStudyDto result;
             try
             {
-                result = await _fullStudyRepository.GetFullStudy(nctIdentifier);
+                result = await _fullStudyRepository.GetFullStudyAsync(nctIdentifier);
             }
             catch (ArgumentException ex)
             {

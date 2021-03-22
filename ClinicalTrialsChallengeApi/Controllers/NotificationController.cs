@@ -21,7 +21,7 @@ namespace ClinicalTrialsChallengeApi.Controllers
             var sendContactResult = await _sendContactUseCase.SendContact(request);
             return sendContactResult.Match<ActionResult>(
                 success => NoContent(),
-                notfound => NotFound("")
+                notfound => NotFound($"Study not found with NCT ID: {request.NctId}")
             );
         }
     }
