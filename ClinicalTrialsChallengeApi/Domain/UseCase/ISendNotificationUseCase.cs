@@ -7,6 +7,6 @@ namespace ClinicalTrialsChallengeApi.Domain.UseCase
 {
     public interface ISendNotificationUseCase
     {
-        Task<OneOf<Success, NotFound>> SendNotification(NotificationRequest request);
+        Task<OneOf<Success, NotFound>> SendNotificationAsync(NotificationRequest request);
     }
 }

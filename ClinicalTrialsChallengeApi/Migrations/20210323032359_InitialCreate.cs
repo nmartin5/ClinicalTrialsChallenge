@@ -11,8 +11,8 @@ namespace ClinicalTrialsChallengeApi.Migrations
                 name: "Recipient",
                 columns: table => new
                 {
-                    Address = table.Column<string>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", nullable: true)
+                    Address = table.Column<string>(type: "TEXT", maxLength: 75, nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -25,8 +25,8 @@ namespace ClinicalTrialsChallengeApi.Migrations
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     RecipientAddress = table.Column<string>(type: "TEXT", nullable: true),
-                    Subject = table.Column<string>(type: "TEXT", nullable: true),
-                    Content = table.Column<string>(type: "TEXT", nullable: true),
+                    Subject = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Content = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
                     Sent = table.Column<DateTime>(type: "TEXT", nullable: false),
                     email_type = table.Column<string>(type: "TEXT", nullable: false)
                 },
@@ -46,8 +46,8 @@ namespace ClinicalTrialsChallengeApi.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", nullable: true),
-                    Base64EncodedContent = table.Column<string>(type: "TEXT", nullable: true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Base64EncodedContent = table.Column<string>(type: "TEXT", nullable: false),
                     EmailId = table.Column<Guid>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>

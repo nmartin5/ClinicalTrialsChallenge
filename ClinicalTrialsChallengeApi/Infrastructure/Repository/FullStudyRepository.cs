@@ -11,7 +11,6 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
 {
     public class FullStudyRepository : IFullStudyRepository
     {
-        // TODO TTL?
         private readonly Dictionary<string, FullStudyDto> _fullStudyCache = new();
         private readonly IFullStudiesClient _fullStudiesClient;
         public FullStudyRepository(IFullStudiesClient fullStudiesClient)
@@ -24,7 +23,6 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
             if (string.IsNullOrWhiteSpace(nctIdentifier))
                 throw new ArgumentException($"{nameof(nctIdentifier)} is required!");
 
-            // TODO make this unit testable
             if (!Regex.IsMatch(nctIdentifier, "(NCT)\\d{8}"))
                 throw new ArgumentException($"{nameof(nctIdentifier)} does not match the expected format! Expected format: NCT00000000");
 

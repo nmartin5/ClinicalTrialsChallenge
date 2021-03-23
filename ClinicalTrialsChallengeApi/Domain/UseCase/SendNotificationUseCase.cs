@@ -23,7 +23,7 @@ namespace ClinicalTrialsChallengeApi.Domain.UseCase
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
-        public async Task<OneOf<Success, NotFound>> SendNotification(NotificationRequest request)
+        public async Task<OneOf<Success, NotFound>> SendNotificationAsync(NotificationRequest request)
         {
             Email email;
             try
@@ -45,7 +45,7 @@ namespace ClinicalTrialsChallengeApi.Domain.UseCase
             }
             catch (NotificationFailedException ex)
             {
-                _logger.LogError(ex, $"{nameof(SendNotification)} failed to send notification.");
+                _logger.LogError(ex, $"{nameof(SendNotificationAsync)} failed to send notification.");
                 throw;
             }
         }

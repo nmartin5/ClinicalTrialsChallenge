@@ -1,6 +1,7 @@
 ﻿using ClinicalTrialsChallengeApi.Domain.Model.Core;
 using NUnit.Framework;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ClinicalTrialsChallengeUnitTests
 {

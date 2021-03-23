@@ -10,7 +10,6 @@ namespace ClinicalTrialsChallengeApi.Domain.Model.Notification
 
         public Attachment(string name, string base64EncodedContent)
         {
-            // TODO file name regex
             Id = Guid.NewGuid();
             Name = name;
             Base64EncodedContent = base64EncodedContent;

@@ -18,6 +18,18 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
 
         public void Add(Email email)
         {
+            var recipient = _context.Find<Recipient>(email.Recipient.Address);
+
+            if (recipient != null)
+            {
+                if (email.Recipient.Name != recipient.Name)
+                {
+                    recipient.Name = email.Recipient.Name;
+                }
+
+                email.Recipient = recipient;
+            }
+
             _context.Add(email);
         }
 

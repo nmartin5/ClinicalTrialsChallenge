@@ -1,5 +1,7 @@
 ﻿using ClinicalTrialsChallengeApi.Domain.Model.Notification;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System;
 
 namespace ClinicalTrialsChallengeApi.Infrastructure.Persistence
 {
@@ -11,6 +13,9 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+                v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
             modelBuilder.Entity<Email>()
                 .HasDiscriminator<string>("email_type")
                 .HasValue<ContactRequestEmail>(nameof(ContactRequestEmail))
@@ -18,6 +23,14 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Persistence
 
             modelBuilder.Entity<Email>()
                 .HasKey(e => e.Id);
+
+            modelBuilder.Entity<Email>()
+            .Property(e => e.Subject).HasMaxLength(100).IsRequired();
+            modelBuilder.Entity<Email>()
+                .Property(e => e.Content).HasMaxLength(1000).IsRequired();
+            modelBuilder.Entity<Email>()
+                .Property(e => e.Sent).HasConversion(dateTimeConverter).IsRequired();
+
 
             modelBuilder.Entity<Email>()
                 .Property(e => e.Id).ValueGeneratedNever();
@@ -32,12 +45,22 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Persistence
 
             modelBuilder.Entity<Attachment>()
                 .Property(e => e.Id).ValueGeneratedNever();
-
             modelBuilder.Entity<Attachment>()
                 .HasKey(a => a.Id);
 
+            modelBuilder.Entity<Attachment>()
+                .Property(e => e.Base64EncodedContent).IsRequired();
+            modelBuilder.Entity<Attachment>()
+                .Property(e => e.Name).IsRequired().HasMaxLength(50);
+
             modelBuilder.Entity<Recipient>()
                 .HasKey(r => r.Address);
+
+            modelBuilder.Entity<Recipient>()
+                .Property(r => r.Address).IsRequired().HasMaxLength(75);
+
+            modelBuilder.Entity<Recipient>()
+                .Property(r => r.Name).HasMaxLength(100);
         }
     }
 }

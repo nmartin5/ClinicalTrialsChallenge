@@ -12,7 +12,8 @@
             <div *ngFor="let keyword of keywords.controls; let i=index; let last=last;">
                 <mat-form-field class="partial-width">
                     <mat-label>Search Term:</mat-label>
-                    <input matInput placeholder="heart attack, COVID-19, etc." [formControlName]="i">
+                    <input matInput placeholder="heart attack, COVID-19, etc." [formControlName]="i"
+                        (keydown.enter)="refreshTable()">
                 </mat-form-field>
                 <button *ngIf="keywords.length > 1" mat-icon-button (click)="removeKeyword(i)"
                     aria-label="Delete keyword">
@@ -25,12 +26,13 @@
         </div>
         <mat-form-field class="full-width">
             <mat-label>Location</mat-label>
-            <input matInput placeholder="enter a city, country, or zip code" formControlName="location">
+            <input matInput placeholder="enter a city, country, or zip code" formControlName="location"
+                (keydown.enter)="refreshTable()">
         </mat-form-field>
 
         <mat-form-field class="full-width">
             <mat-label>Accepted Statuses</mat-label>
-            <mat-select multiple formControlName="statuses">
+            <mat-select multiple formControlName="statuses" (selectionChange)="refreshTable()">
                 <mat-option *ngFor='let status of studyStatuses | async' [value]="status.value">{{status.value}}
                 </mat-option>
             </mat-select>
@@ -39,13 +41,15 @@
         <div>
             <mat-form-field>
                 <mat-label>Accepted Gender</mat-label>
-                <mat-select formControlName="gender">
+                <mat-select formControlName="gender" (selectionChange)="refreshTable()">
                     <mat-option value="All">All</mat-option>
                     <mat-option value="Female">Female</mat-option>
                     <mat-option value="Male">Male</mat-option>
                 </mat-select>
             </mat-form-field>
-            <mat-checkbox formControlName="centralContactRequired">Only show trials with contact(s)</mat-checkbox>
+            <mat-checkbox formControlName="centralContactRequired" (change)="refreshTable()">
+                Only show trials with contact(s)
+            </mat-checkbox>
         </div>
     </mat-card>
 

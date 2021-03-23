@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicalTrialsChallengeApi.Migrations
 {
     [DbContext(typeof(ClinicalTrialsDbContext))]
-    [Migration("20210323012704_InitialCreate")]
+    [Migration("20210323032359_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,12 +24,15 @@ namespace ClinicalTrialsChallengeApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Base64EncodedContent")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("EmailId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -45,6 +48,8 @@ namespace ClinicalTrialsChallengeApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RecipientAddress")
@@ -54,6 +59,8 @@ namespace ClinicalTrialsChallengeApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("email_type")
@@ -72,9 +79,11 @@ namespace ClinicalTrialsChallengeApi.Migrations
             modelBuilder.Entity("ClinicalTrialsChallengeApi.Domain.Model.Notification.Recipient", b =>
                 {
                     b.Property<string>("Address")
+                        .HasMaxLength(75)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Address");

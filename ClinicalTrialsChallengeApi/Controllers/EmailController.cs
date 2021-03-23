@@ -27,7 +27,7 @@ namespace ClinicalTrialsChallengeApi.Controllers
         [HttpPost]
         public async Task<ActionResult> Send([Required]NotificationRequest request)
         {
-            var sendContactResult = await _sendNotificationUseCase.SendNotification(request);
+            var sendContactResult = await _sendNotificationUseCase.SendNotificationAsync(request);
             return sendContactResult.Match<ActionResult>(
                 success => NoContent(),
                 notfound => NotFound($"Study not found with NCT ID: {request.NctId}")

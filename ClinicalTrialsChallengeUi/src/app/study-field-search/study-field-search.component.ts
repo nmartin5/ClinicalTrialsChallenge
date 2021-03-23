@@ -19,7 +19,7 @@ export class StudyFieldSearchComponent implements OnInit {
     ]),
     location: [''],
     statuses: [null],
-    gender: ['Any'],
+    gender: ['All'],
     centralContactRequired: [false]
   });
 
@@ -61,7 +61,8 @@ export class StudyFieldSearchComponent implements OnInit {
       ]),
       location: [''],
       statuses: [null],
-      gender: ['Any']
+      gender: ['All'],
+      centralContactRequired: [false]
     });
   }
 
