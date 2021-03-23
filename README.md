@@ -50,7 +50,7 @@ By default, a local database will be lazily created once first needed by the run
     ng serve
     ```
 
-    This will serve up to https://localhost:4200 by default
+    This will serve up to http://localhost:4200 by default
 
 - Running the API
 
