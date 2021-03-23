@@ -1,5 +1,4 @@
-﻿using ClinicalTrialsChallengeApi.Infrastructure.Repository;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace ClinicalTrialsChallengeApi.Configuration.Installer
@@ -23,14 +22,6 @@ namespace ClinicalTrialsChallengeApi.Configuration.Installer
                     };
                 };
             });
-        }
-    }
-
-    public static class RepositoryInstaller
-    {
-        public static void ConfigureRepositories(this IServiceCollection services)
-        {
-            services.AddScoped<IStudyFieldRepository, StudyFieldRepository>();
         }
     }
 }

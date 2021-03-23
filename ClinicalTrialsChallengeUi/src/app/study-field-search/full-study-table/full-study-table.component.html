@@ -1,0 +1,57 @@
+<div class="mat-elevation-z8">
+  <div class="loading-shade" *ngIf="isLoadingResults || isGovernmentServiceDown">
+    <mat-spinner *ngIf="isLoadingResults"></mat-spinner>
+    <div class="service-down" *ngIf="isGovernmentServiceDown">
+      Government service rate limit has been reached. Retring in {{retrySecondsLeft}} seconds.
+    </div>
+  </div>
+  <table mat-table class="full-width-table" aria-label="Full Studies" [dataSource]="filteredAndPagedStudies">
+    <!-- Title Column -->
+    <ng-container matColumnDef="title">
+      <th mat-header-cell *matHeaderCellDef>Title</th>
+      <td mat-cell *matCellDef="let row">{{row.title}}</td>
+    </ng-container>
+
+    <!-- Organization Column -->
+    <ng-container matColumnDef="organizationName">
+      <th mat-header-cell *matHeaderCellDef>Organization</th>
+      <td mat-cell *matCellDef="let row">{{row.organizationName}}</td>
+    </ng-container>
+
+    <!-- Status Column -->
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>Status</th>
+      <td mat-cell *matCellDef="let row">{{row.status}}</td>
+    </ng-container>
+
+    <!-- Location Column -->
+    <ng-container matColumnDef="location">
+      <th mat-header-cell *matHeaderCellDef>Location</th>
+      <td mat-cell *matCellDef="let row">{{formatLocation(row.location)}}</td>
+    </ng-container>
+
+    <!-- Detail Column -->
+    <ng-container matColumnDef="detail">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let row">
+        <span matTooltip="Central contact does not exist!" [matTooltipDisabled]="hasContact(row)"
+          matTooltipPosition='before' matTooltipClass="tooltip-red">
+          <button mat-icon-button (click)="showContactModal(row)" matTooltip="Get contact information"
+            matTooltipPosition='before' #tooltip="matTooltip" [disabled]="!hasContact(row)">
+            <mat-icon>contact_mail</mat-icon>
+          </button>
+        </span>
+        <button mat-icon-button (click)="showDownloadModal(row)" matTooltip="Get full study information"
+          matTooltipPosition='before'>
+          <mat-icon>save</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <mat-paginator #paginator [length]="resultsLength" [pageIndex]="0" [pageSize]="10" [pageSizeOptions]="[5, 10, 25]">
+  </mat-paginator>
+</div>
