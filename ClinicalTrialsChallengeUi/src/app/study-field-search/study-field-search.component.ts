@@ -19,7 +19,8 @@ export class StudyFieldSearchComponent implements OnInit {
     ]),
     location: [''],
     statuses: [null],
-    gender: ['Any']
+    gender: ['Any'],
+    centralContactRequired: [false]
   });
 
   studyStatuses!: Observable<Status[]>;  
@@ -78,7 +79,8 @@ export class StudyFieldSearchComponent implements OnInit {
       keywords: [...this.keywords.value, ...allSearchTerms],
       location: this.searchRequestForm.get('location')?.value,
       statuses: this.searchRequestForm.get('statuses')?.value,
-      gender: this.searchRequestForm.get('gender')?.value ?? 'All'
+      gender: this.searchRequestForm.get('gender')?.value ?? 'All',
+      centralContactRequired: this.searchRequestForm.get('centralContactRequired')?.value
     }
   }
 }

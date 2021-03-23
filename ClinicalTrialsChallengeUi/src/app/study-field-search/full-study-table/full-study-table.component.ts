@@ -1,16 +1,17 @@
-import { AfterViewInit, Component, ViewChild, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { AfterViewInit, Component, ViewChild, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
-import { FullStudyClient, FullStudyViewDto, LocationDto, PaginatedFullStudies, Pagination, NotificationClient } from 'src/app/client-lib/client';
+import { FullStudyClient, FullStudyViewDto, LocationDto, PaginatedFullStudies, Pagination, EmailClient, NotificationRequest, RecipientRequest, NotificationType } from 'src/app/client-lib/client';
 import { Observable, of, timer, Scheduler, interval } from 'rxjs';
 import { startWith, switchMap, map, takeUntil, finalize } from 'rxjs/operators';
 import { SearchRequest } from '../search-request';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
-import { ContactRequestComponent } from '../contact-request/contact-request.component';
+import { EmailDialogComponent, EmailDialogInput, EmailDialogResult } from '../email-dialog/email-dialog.component';
 
 @Component({
   selector: 'ct-full-study-table',
   templateUrl: './full-study-table.component.html',
-  styleUrls: ['./full-study-table.component.scss']
+  styleUrls: ['./full-study-table.component.scss'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class FullStudyTableComponent implements AfterViewInit {
   @Input() searchRequest: SearchRequest | null = null;
@@ -22,18 +23,15 @@ export class FullStudyTableComponent implements AfterViewInit {
   retrySecondsLeft = 0;
 
   filteredAndPagedStudies!: Observable<FullStudyViewDto[]>;
-
-  /** Columns displayed in the table. Columns IDs can be added, removed, or reordered. */
   displayedColumns = ['title', 'organizationName', 'status', 'detail'];
 
-  constructor(private fullStudyClient: FullStudyClient, private notificationClient: NotificationClient, public dialog: MatDialog) { }
+  constructor(private fullStudyClient: FullStudyClient, private notificationClient: EmailClient, public dialog: MatDialog) { }
 
   ngAfterViewInit(): void {
     setTimeout(() => this.refresh());
   }
 
-  refresh() {
-    console.log(this.searchRequest);
+  refresh(): void {
     this.filteredAndPagedStudies = this.paginator?.page
       .pipe(
         startWith({}),
@@ -46,7 +44,7 @@ export class FullStudyTableComponent implements AfterViewInit {
                 skip: 0,
                 take: 0,
                 totalItems: 0
-              }) 
+              })
             }));
           return this.fullStudyClient.search(
             (this.paginator.pageIndex * this.paginator.pageSize),
@@ -54,13 +52,14 @@ export class FullStudyTableComponent implements AfterViewInit {
             this.searchRequest?.keywords,
             this.searchRequest?.location,
             this.searchRequest?.statuses,
-            this.searchRequest?.gender
+            this.searchRequest?.gender,
+            this.searchRequest?.centralContactRequired
           );
         }),
         map((data: PaginatedFullStudies) => {
           setTimeout(() => this.isLoadingResults = false);
 
-          if(data.pagination?.skip == 0 && data.pagination.take == 0 && data.pagination.totalItems == 0 && this.searchRequestIsValid()){
+          if (data.pagination?.skip == 0 && data.pagination.take == 0 && data.pagination.totalItems == 0 && this.searchRequestIsValid()) {
             this.isGovernmentServiceDown = true;
             this.retry();
             return [];
@@ -74,23 +73,54 @@ export class FullStudyTableComponent implements AfterViewInit {
       );
   }
 
-  private searchRequestIsValid(){
+  private searchRequestIsValid() {
     return this.searchRequest && this.searchRequest.keywords.some(k => k.length > 0);
   }
 
-  showContactModal(study: FullStudyViewDto){
+  showContactModal(study: FullStudyViewDto) {
     const dialogConfig = new MatDialogConfig();
     dialogConfig.width = "30%";
-    dialogConfig.minWidth = '400px'; 
-    const dialogRef = this.dialog.open(ContactRequestComponent, dialogConfig);
+    dialogConfig.minWidth = '400px';
+    dialogConfig.data = <EmailDialogInput>{
+      title: 'Contact Request',
+      prompt: 'Provide your email address to receive the contact information of a person to whom questions concerning enrollment at any location of the study can be addressed.'
+    }
+    const dialogRef = this.dialog.open(EmailDialogComponent, dialogConfig);
 
-    dialogRef.afterClosed().subscribe(result => {
-      this.notificationClient.notify();
-      console.log(`Dialog result: ${result}`);
+    dialogRef.afterClosed().subscribe((result: EmailDialogResult) => {
+      if (!result)
+        return;
+      this.sendNotification(result, study.nctId!, NotificationType.ContactRequestEmail);
     })
   }
 
-  retry(){
+  showDownloadModal(study: FullStudyViewDto) {
+    const dialogConfig = new MatDialogConfig();
+    dialogConfig.width = "30%";
+    dialogConfig.minWidth = '400px';
+    dialogConfig.data = <EmailDialogInput>{
+      title: 'Study Request',
+      prompt: 'Provide your email address to receive the full study data export.'
+    }
+    const dialogRef = this.dialog.open(EmailDialogComponent, dialogConfig);
+
+    dialogRef.afterClosed().subscribe((result: EmailDialogResult) => {
+      if (!result)
+        return;
+      this.sendNotification(result, study.nctId!, NotificationType.StudyRequestEmail)
+    })
+  }
+
+  private sendNotification(result: EmailDialogResult, nctId: string, notificationType: NotificationType){
+    this.notificationClient.send(new NotificationRequest({
+      nctId: nctId, recipientRequest: new RecipientRequest({
+        recipientAddress: result.email,
+        recipientName: result.name
+      }), notificationType: notificationType
+    })).subscribe();
+  }
+
+  retry() {
     const retryInterval = interval(1000);
     const retryTimer = timer(5000);
 
@@ -102,12 +132,16 @@ export class FullStudyTableComponent implements AfterViewInit {
     ).subscribe(val => {
       this.retrySecondsLeft--;
     });
-    
+
   }
 
   formatLocation(location: LocationDto): string {
     if (!location)
       return '';
     return `${location.locationCity}${location.locationState ? `, ${location.locationState}` : ''}, ${location.locationCountry}`;
+  }
+
+  hasContact(study: FullStudyViewDto): boolean {
+    return (study.centralContacts !== undefined && study.centralContacts !== null && study.centralContacts.length > 0)
   }
 }

@@ -18,6 +18,7 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
         {
             _fullStudiesClient = fullStudiesClient;
         }
+
         public async Task<FullStudyDto> GetFullStudyAsync(string nctIdentifier)
         {
             if (string.IsNullOrWhiteSpace(nctIdentifier))
@@ -44,8 +45,8 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
             return foundStudy;
         }
 
-        public async Task<PaginatedFullStudyDto> GetPaginatedFullStudies(int skip, int take, IEnumerable<string> keywords,
-            string location = null, IEnumerable<string> filterStatuses = null, string gender = null)
+        public async Task<PaginatedFullStudyDto> GetPaginatedFullStudiesAsync(int skip, int take, IEnumerable<string> keywords,
+            string location = null, IEnumerable<string> filterStatuses = null, string gender = null, bool centralContactRequired = false)
         {
             if (skip < 0)
                 throw new ArgumentException($"{nameof(skip)} cannot be negative!");
@@ -73,6 +74,11 @@ namespace ClinicalTrialsChallengeApi.Infrastructure.Repository
                 keywordInclusiveClauseSb.Append(" AND (EXPANSION[None]AREA[OverallStatus]\"");
                 keywordInclusiveClauseSb.Append(string.Join("\" OR EXPANSION[None]AREA[OverallStatus]\"", nonEmptyFilterStatuses));
                 keywordInclusiveClauseSb.Append("\")");
+            }
+
+            if (centralContactRequired)
+            {
+                keywordInclusiveClauseSb.Append(" AND (NOT AREA[CentralContactEMail]MISSING)");
             }
 
             var foundStudies = await _fullStudiesClient.GetFullStudiesAsync(keywordInclusiveClauseSb.ToString(), skip, take);

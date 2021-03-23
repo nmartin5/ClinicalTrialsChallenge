@@ -1,8 +1,11 @@
 using ClinicalTrialsChallengeApi.Configuration;
 using ClinicalTrialsChallengeApi.Configuration.Installer;
+using ClinicalTrialsChallengeApi.Domain.Factory;
 using ClinicalTrialsChallengeApi.Domain.UseCase;
 using ClinicalTrialsChallengeApi.Infrastructure;
 using ClinicalTrialsChallengeApi.Infrastructure.Client;
+using ClinicalTrialsChallengeApi.Infrastructure.Persistence;
+using ClinicalTrialsChallengeApi.Infrastructure.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -27,12 +30,14 @@ namespace ClinicalTrialsChallengeApi
             services.AddControllers();
             services.ConfigureOpenApi();
             services.AddHttpClient();
-            services.ConfigureRepositories();
+            services.InstallDbContext(Configuration);
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IFullStudiesClient, FullStudiesClient>();
             services.Configure<EmailOptions>(options => Configuration.GetSection(nameof(EmailOptions)).Bind(options));
             services.AddScoped<ISendEmailService, EmailService>();
-            services.AddScoped<ISendContactUseCase, SendContactUseCase>();
             services.AddScoped<IVCardSerializer, VCard4Serializer>();
+            services.AddScoped<IEmailFactory, EmailFactory>();
+            services.ConfigureUseCases();
 
             services.AddCors(options =>
             {

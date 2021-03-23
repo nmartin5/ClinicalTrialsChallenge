@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ClinicalTrialsChallengeApi.Domain.Model.Notification;
+using System.Collections.Generic;
 
 namespace ClinicalTrialsChallengeApi.Infrastructure.Dto.Response
 {

@@ -26,8 +26,11 @@ import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ContactRequestComponent } from './study-field-search/contact-request/contact-request.component';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { EmailDialogComponent } from './study-field-search/email-dialog/email-dialog.component';
+import { EmailSearchComponent } from './email-search/email-search.component';
+import { EmailSearchTableComponent } from './email-search/email-search-table/email-search-table.component';
 
 @NgModule({
   declarations: [
@@ -35,7 +38,9 @@ import { MatDialogModule } from '@angular/material/dialog';
     StudyFieldSearchComponent,
     NavigationComponent,
     FullStudyTableComponent,
-    ContactRequestComponent
+    EmailDialogComponent,
+    EmailSearchComponent,
+    EmailSearchTableComponent
   ],
   imports: [
     BrowserModule,
@@ -59,7 +64,8 @@ import { MatDialogModule } from '@angular/material/dialog';
     MatSortModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    MatDialogModule
+    MatDialogModule,
+    MatCheckboxModule
   ],
   providers: [HttpClient],
   bootstrap: [AppComponent]

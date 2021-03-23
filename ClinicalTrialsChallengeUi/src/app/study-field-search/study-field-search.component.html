@@ -1,7 +1,10 @@
+<mat-toolbar color="secondary">
+    <span>Search</span>
+</mat-toolbar>
 <mat-card>
     <mat-card [formGroup]="searchRequestForm" class="form">
         <div formArrayName="keywords">
-            <div class="align-right">                
+            <div class="align-right">
                 <button mat-raised-button color="red" (click)="clearForm()">Reset filters</button>
                 <button mat-raised-button (click)="refreshTable()" color="primary">Search</button>
             </div>
@@ -28,18 +31,22 @@
         <mat-form-field class="full-width">
             <mat-label>Accepted Statuses</mat-label>
             <mat-select multiple formControlName="statuses">
-                <mat-option *ngFor='let status of studyStatuses | async' [value]="status.value">{{status.value}}</mat-option>
+                <mat-option *ngFor='let status of studyStatuses | async' [value]="status.value">{{status.value}}
+                </mat-option>
             </mat-select>
         </mat-form-field>
 
-        <mat-form-field>
-            <mat-label>Accepted Gender</mat-label>
-            <mat-select formControlName="gender">
-                <mat-option value="All">All</mat-option>
-                <mat-option value="Female">Female</mat-option>
-                <mat-option value="Male">Male</mat-option>
-            </mat-select>
-        </mat-form-field>        
+        <div>
+            <mat-form-field>
+                <mat-label>Accepted Gender</mat-label>
+                <mat-select formControlName="gender">
+                    <mat-option value="All">All</mat-option>
+                    <mat-option value="Female">Female</mat-option>
+                    <mat-option value="Male">Male</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <mat-checkbox formControlName="centralContactRequired">Only show trials with contact(s)</mat-checkbox>
+        </div>
     </mat-card>
 
     <ct-full-study-table [searchRequest]="searchRequest"></ct-full-study-table>

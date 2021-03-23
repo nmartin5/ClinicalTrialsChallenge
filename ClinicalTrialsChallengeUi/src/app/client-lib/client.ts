@@ -17,6 +17,178 @@ export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 @Injectable({
     providedIn: 'root'
 })
+export class EmailClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl !== undefined && baseUrl !== null ? baseUrl : "https://localhost:44331";
+    }
+
+    send(request: NotificationRequest): Observable<FileResponse | null> {
+        let url_ = this.baseUrl + "/Email";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/octet-stream"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processSend(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processSend(<any>response_);
+                } catch (e) {
+                    return <Observable<FileResponse | null>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<FileResponse | null>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processSend(response: HttpResponseBase): Observable<FileResponse | null> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            const fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+            const fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            return _observableOf({ fileName: fileName, data: <any>responseBlob, status: status, headers: _headers });
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<FileResponse | null>(<any>null);
+    }
+
+    get(emailId: string | undefined): Observable<Email> {
+        let url_ = this.baseUrl + "/Email?";
+        if (emailId === null)
+            throw new Error("The parameter 'emailId' cannot be null.");
+        else if (emailId !== undefined)
+            url_ += "emailId=" + encodeURIComponent("" + emailId) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGet(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGet(<any>response_);
+                } catch (e) {
+                    return <Observable<Email>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<Email>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processGet(response: HttpResponseBase): Observable<Email> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = Email.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<Email>(<any>null);
+    }
+
+    search(skip: number | undefined, take: number | undefined): Observable<PaginatedEmails> {
+        let url_ = this.baseUrl + "/Email/search?";
+        if (skip === null)
+            throw new Error("The parameter 'skip' cannot be null.");
+        else if (skip !== undefined)
+            url_ += "Skip=" + encodeURIComponent("" + skip) + "&";
+        if (take === null)
+            throw new Error("The parameter 'take' cannot be null.");
+        else if (take !== undefined)
+            url_ += "Take=" + encodeURIComponent("" + take) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processSearch(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processSearch(<any>response_);
+                } catch (e) {
+                    return <Observable<PaginatedEmails>><any>_observableThrow(e);
+                }
+            } else
+                return <Observable<PaginatedEmails>><any>_observableThrow(response_);
+        }));
+    }
+
+    protected processSearch(response: HttpResponseBase): Observable<PaginatedEmails> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PaginatedEmails.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf<PaginatedEmails>(<any>null);
+    }
+}
+
+@Injectable({
+    providedIn: 'root'
+})
 export class FullStudyClient {
     private http: HttpClient;
     private baseUrl: string;
@@ -77,7 +249,7 @@ export class FullStudyClient {
         return _observableOf<FullStudyDto>(<any>null);
     }
 
-    search(paginationRequest_Skip: number | undefined, paginationRequest_Take: number | undefined, keywords: string[] | null | undefined, location: string | null | undefined, statuses: string[] | null | undefined, gender: string | null | undefined): Observable<PaginatedFullStudies> {
+    search(paginationRequest_Skip: number | undefined, paginationRequest_Take: number | undefined, keywords: string[] | null | undefined, location: string | null | undefined, statuses: string[] | null | undefined, gender: string | null | undefined, centralContactRequired: boolean | undefined): Observable<PaginatedFullStudies> {
         let url_ = this.baseUrl + "/FullStudy/search?";
         if (paginationRequest_Skip === null)
             throw new Error("The parameter 'paginationRequest_Skip' cannot be null.");
@@ -95,6 +267,10 @@ export class FullStudyClient {
             statuses && statuses.forEach(item => { url_ += "Statuses=" + encodeURIComponent("" + item) + "&"; });
         if (gender !== undefined && gender !== null)
             url_ += "Gender=" + encodeURIComponent("" + gender) + "&";
+        if (centralContactRequired === null)
+            throw new Error("The parameter 'centralContactRequired' cannot be null.");
+        else if (centralContactRequired !== undefined)
+            url_ += "CentralContactRequired=" + encodeURIComponent("" + centralContactRequired) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -139,66 +315,6 @@ export class FullStudyClient {
             }));
         }
         return _observableOf<PaginatedFullStudies>(<any>null);
-    }
-}
-
-@Injectable({
-    providedIn: 'root'
-})
-export class NotificationClient {
-    private http: HttpClient;
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
-        this.http = http;
-        this.baseUrl = baseUrl !== undefined && baseUrl !== null ? baseUrl : "https://localhost:44331";
-    }
-
-    notify(): Observable<FileResponse | null> {
-        let url_ = this.baseUrl + "/Notification";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_ : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/octet-stream"
-            })
-        };
-
-        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processNotify(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processNotify(<any>response_);
-                } catch (e) {
-                    return <Observable<FileResponse | null>><any>_observableThrow(e);
-                }
-            } else
-                return <Observable<FileResponse | null>><any>_observableThrow(response_);
-        }));
-    }
-
-    protected processNotify(response: HttpResponseBase): Observable<FileResponse | null> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (<any>response).error instanceof Blob ? (<any>response).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            const fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-            const fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            return _observableOf({ fileName: fileName, data: <any>responseBlob, status: status, headers: _headers });
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap(_responseText => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
-        }
-        return _observableOf<FileResponse | null>(<any>null);
     }
 }
 
@@ -266,6 +382,389 @@ export class StatusClient {
         }
         return _observableOf<Status[]>(<any>null);
     }
+}
+
+export class NotificationRequest implements INotificationRequest {
+    nctId?: string | undefined;
+    recipientRequest?: RecipientRequest | undefined;
+    notificationType!: NotificationType;
+
+    constructor(data?: INotificationRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.nctId = _data["nctId"];
+            this.recipientRequest = _data["recipientRequest"] ? RecipientRequest.fromJS(_data["recipientRequest"]) : <any>undefined;
+            this.notificationType = _data["notificationType"];
+        }
+    }
+
+    static fromJS(data: any): NotificationRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new NotificationRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["nctId"] = this.nctId;
+        data["recipientRequest"] = this.recipientRequest ? this.recipientRequest.toJSON() : <any>undefined;
+        data["notificationType"] = this.notificationType;
+        return data; 
+    }
+}
+
+export interface INotificationRequest {
+    nctId?: string | undefined;
+    recipientRequest?: RecipientRequest | undefined;
+    notificationType: NotificationType;
+}
+
+export class RecipientRequest implements IRecipientRequest {
+    recipientAddress?: string | undefined;
+    recipientName?: string | undefined;
+
+    constructor(data?: IRecipientRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.recipientAddress = _data["recipientAddress"];
+            this.recipientName = _data["recipientName"];
+        }
+    }
+
+    static fromJS(data: any): RecipientRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new RecipientRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["recipientAddress"] = this.recipientAddress;
+        data["recipientName"] = this.recipientName;
+        return data; 
+    }
+}
+
+export interface IRecipientRequest {
+    recipientAddress?: string | undefined;
+    recipientName?: string | undefined;
+}
+
+export enum NotificationType {
+    ContactRequestEmail = 0,
+    StudyRequestEmail = 1,
+}
+
+export abstract class Email implements IEmail {
+    recipient?: Recipient | undefined;
+    attachments?: Attachment[] | undefined;
+    id!: string;
+    subject?: string | undefined;
+    content?: string | undefined;
+    sent!: Date;
+
+    constructor(data?: IEmail) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.recipient = _data["recipient"] ? Recipient.fromJS(_data["recipient"]) : <any>undefined;
+            if (Array.isArray(_data["attachments"])) {
+                this.attachments = [] as any;
+                for (let item of _data["attachments"])
+                    this.attachments!.push(Attachment.fromJS(item));
+            }
+            this.id = _data["id"];
+            this.subject = _data["subject"];
+            this.content = _data["content"];
+            this.sent = _data["sent"] ? new Date(_data["sent"].toString()) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): Email {
+        data = typeof data === 'object' ? data : {};
+        throw new Error("The abstract class 'Email' cannot be instantiated.");
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["recipient"] = this.recipient ? this.recipient.toJSON() : <any>undefined;
+        if (Array.isArray(this.attachments)) {
+            data["attachments"] = [];
+            for (let item of this.attachments)
+                data["attachments"].push(item.toJSON());
+        }
+        data["id"] = this.id;
+        data["subject"] = this.subject;
+        data["content"] = this.content;
+        data["sent"] = this.sent ? this.sent.toISOString() : <any>undefined;
+        return data; 
+    }
+}
+
+export interface IEmail {
+    recipient?: Recipient | undefined;
+    attachments?: Attachment[] | undefined;
+    id: string;
+    subject?: string | undefined;
+    content?: string | undefined;
+    sent: Date;
+}
+
+export class Recipient implements IRecipient {
+    name?: string | undefined;
+    address?: string | undefined;
+
+    constructor(data?: IRecipient) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.address = _data["address"];
+        }
+    }
+
+    static fromJS(data: any): Recipient {
+        data = typeof data === 'object' ? data : {};
+        let result = new Recipient();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["address"] = this.address;
+        return data; 
+    }
+}
+
+export interface IRecipient {
+    name?: string | undefined;
+    address?: string | undefined;
+}
+
+export class Attachment implements IAttachment {
+    id!: string;
+    name?: string | undefined;
+    base64EncodedContent?: string | undefined;
+
+    constructor(data?: IAttachment) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.name = _data["name"];
+            this.base64EncodedContent = _data["base64EncodedContent"];
+        }
+    }
+
+    static fromJS(data: any): Attachment {
+        data = typeof data === 'object' ? data : {};
+        let result = new Attachment();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["base64EncodedContent"] = this.base64EncodedContent;
+        return data; 
+    }
+}
+
+export interface IAttachment {
+    id: string;
+    name?: string | undefined;
+    base64EncodedContent?: string | undefined;
+}
+
+export class PaginatedEmails implements IPaginatedEmails {
+    emails?: EmailDto[] | undefined;
+    pagination?: Pagination | undefined;
+
+    constructor(data?: IPaginatedEmails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["emails"])) {
+                this.emails = [] as any;
+                for (let item of _data["emails"])
+                    this.emails!.push(EmailDto.fromJS(item));
+            }
+            this.pagination = _data["pagination"] ? Pagination.fromJS(_data["pagination"]) : <any>undefined;
+        }
+    }
+
+    static fromJS(data: any): PaginatedEmails {
+        data = typeof data === 'object' ? data : {};
+        let result = new PaginatedEmails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.emails)) {
+            data["emails"] = [];
+            for (let item of this.emails)
+                data["emails"].push(item.toJSON());
+        }
+        data["pagination"] = this.pagination ? this.pagination.toJSON() : <any>undefined;
+        return data; 
+    }
+}
+
+export interface IPaginatedEmails {
+    emails?: EmailDto[] | undefined;
+    pagination?: Pagination | undefined;
+}
+
+export class EmailDto implements IEmailDto {
+    id!: string;
+    sent!: Date;
+    subject?: string | undefined;
+    notificationType!: NotificationType;
+    recipientAddress?: string | undefined;
+    attachmentCount!: number;
+
+    constructor(data?: IEmailDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+            this.sent = _data["sent"] ? new Date(_data["sent"].toString()) : <any>undefined;
+            this.subject = _data["subject"];
+            this.notificationType = _data["notificationType"];
+            this.recipientAddress = _data["recipientAddress"];
+            this.attachmentCount = _data["attachmentCount"];
+        }
+    }
+
+    static fromJS(data: any): EmailDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new EmailDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["sent"] = this.sent ? this.sent.toISOString() : <any>undefined;
+        data["subject"] = this.subject;
+        data["notificationType"] = this.notificationType;
+        data["recipientAddress"] = this.recipientAddress;
+        data["attachmentCount"] = this.attachmentCount;
+        return data; 
+    }
+}
+
+export interface IEmailDto {
+    id: string;
+    sent: Date;
+    subject?: string | undefined;
+    notificationType: NotificationType;
+    recipientAddress?: string | undefined;
+    attachmentCount: number;
+}
+
+export class Pagination implements IPagination {
+    skip!: number;
+    take!: number;
+    totalItems!: number;
+
+    constructor(data?: IPagination) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.skip = _data["skip"];
+            this.take = _data["take"];
+            this.totalItems = _data["totalItems"];
+        }
+    }
+
+    static fromJS(data: any): Pagination {
+        data = typeof data === 'object' ? data : {};
+        let result = new Pagination();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["skip"] = this.skip;
+        data["take"] = this.take;
+        data["totalItems"] = this.totalItems;
+        return data; 
+    }
+}
+
+export interface IPagination {
+    skip: number;
+    take: number;
+    totalItems: number;
 }
 
 export class FullStudyDto implements IFullStudyDto {
@@ -2003,6 +2502,7 @@ export interface IStdagelistDto {
 export class ContactslocationsmoduleDto implements IContactslocationsmoduleDto {
     overallOfficialList?: OverallofficiallistDto | undefined;
     locationList?: LocationlistDto | undefined;
+    centralContactList?: CentralcontactlistDto | undefined;
 
     constructor(data?: IContactslocationsmoduleDto) {
         if (data) {
@@ -2017,6 +2517,7 @@ export class ContactslocationsmoduleDto implements IContactslocationsmoduleDto {
         if (_data) {
             this.overallOfficialList = _data["overallOfficialList"] ? OverallofficiallistDto.fromJS(_data["overallOfficialList"]) : <any>undefined;
             this.locationList = _data["locationList"] ? LocationlistDto.fromJS(_data["locationList"]) : <any>undefined;
+            this.centralContactList = _data["centralContactList"] ? CentralcontactlistDto.fromJS(_data["centralContactList"]) : <any>undefined;
         }
     }
 
@@ -2031,6 +2532,7 @@ export class ContactslocationsmoduleDto implements IContactslocationsmoduleDto {
         data = typeof data === 'object' ? data : {};
         data["overallOfficialList"] = this.overallOfficialList ? this.overallOfficialList.toJSON() : <any>undefined;
         data["locationList"] = this.locationList ? this.locationList.toJSON() : <any>undefined;
+        data["centralContactList"] = this.centralContactList ? this.centralContactList.toJSON() : <any>undefined;
         return data; 
     }
 }
@@ -2038,6 +2540,7 @@ export class ContactslocationsmoduleDto implements IContactslocationsmoduleDto {
 export interface IContactslocationsmoduleDto {
     overallOfficialList?: OverallofficiallistDto | undefined;
     locationList?: LocationlistDto | undefined;
+    centralContactList?: CentralcontactlistDto | undefined;
 }
 
 export class OverallofficiallistDto implements IOverallofficiallistDto {
@@ -2222,6 +2725,94 @@ export interface ILocationDto {
     locationState?: string | undefined;
     locationZip?: string | undefined;
     locationCountry?: string | undefined;
+}
+
+export class CentralcontactlistDto implements ICentralcontactlistDto {
+    centralContact?: CentralcontactDto[] | undefined;
+
+    constructor(data?: ICentralcontactlistDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["centralContact"])) {
+                this.centralContact = [] as any;
+                for (let item of _data["centralContact"])
+                    this.centralContact!.push(CentralcontactDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): CentralcontactlistDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CentralcontactlistDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.centralContact)) {
+            data["centralContact"] = [];
+            for (let item of this.centralContact)
+                data["centralContact"].push(item.toJSON());
+        }
+        return data; 
+    }
+}
+
+export interface ICentralcontactlistDto {
+    centralContact?: CentralcontactDto[] | undefined;
+}
+
+export class CentralcontactDto implements ICentralcontactDto {
+    centralContactName?: string | undefined;
+    centralContactPhone?: string | undefined;
+    centralContactEMail?: string | undefined;
+
+    constructor(data?: ICentralcontactDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.centralContactName = _data["centralContactName"];
+            this.centralContactPhone = _data["centralContactPhone"];
+            this.centralContactEMail = _data["centralContactEMail"];
+        }
+    }
+
+    static fromJS(data: any): CentralcontactDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CentralcontactDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["centralContactName"] = this.centralContactName;
+        data["centralContactPhone"] = this.centralContactPhone;
+        data["centralContactEMail"] = this.centralContactEMail;
+        return data; 
+    }
+}
+
+export interface ICentralcontactDto {
+    centralContactName?: string | undefined;
+    centralContactPhone?: string | undefined;
+    centralContactEMail?: string | undefined;
 }
 
 export class ReferencesmoduleDto implements IReferencesmoduleDto {
@@ -2871,6 +3462,7 @@ export class FullStudyViewDto implements IFullStudyViewDto {
     status?: string | undefined;
     briefSummary?: string | undefined;
     location?: LocationDto | undefined;
+    centralContacts?: Contact[] | undefined;
 
     constructor(data?: IFullStudyViewDto) {
         if (data) {
@@ -2889,6 +3481,11 @@ export class FullStudyViewDto implements IFullStudyViewDto {
             this.status = _data["status"];
             this.briefSummary = _data["briefSummary"];
             this.location = _data["location"] ? LocationDto.fromJS(_data["location"]) : <any>undefined;
+            if (Array.isArray(_data["centralContacts"])) {
+                this.centralContacts = [] as any;
+                for (let item of _data["centralContacts"])
+                    this.centralContacts!.push(Contact.fromJS(item));
+            }
         }
     }
 
@@ -2907,6 +3504,11 @@ export class FullStudyViewDto implements IFullStudyViewDto {
         data["status"] = this.status;
         data["briefSummary"] = this.briefSummary;
         data["location"] = this.location ? this.location.toJSON() : <any>undefined;
+        if (Array.isArray(this.centralContacts)) {
+            data["centralContacts"] = [];
+            for (let item of this.centralContacts)
+                data["centralContacts"].push(item.toJSON());
+        }
         return data; 
     }
 }
@@ -2918,14 +3520,15 @@ export interface IFullStudyViewDto {
     status?: string | undefined;
     briefSummary?: string | undefined;
     location?: LocationDto | undefined;
+    centralContacts?: Contact[] | undefined;
 }
 
-export class Pagination implements IPagination {
-    skip!: number;
-    take!: number;
-    totalItems!: number;
+export class Contact implements IContact {
+    name?: string | undefined;
+    phone?: string | undefined;
+    email?: string | undefined;
 
-    constructor(data?: IPagination) {
+    constructor(data?: IContact) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -2936,32 +3539,32 @@ export class Pagination implements IPagination {
 
     init(_data?: any) {
         if (_data) {
-            this.skip = _data["skip"];
-            this.take = _data["take"];
-            this.totalItems = _data["totalItems"];
+            this.name = _data["name"];
+            this.phone = _data["phone"];
+            this.email = _data["email"];
         }
     }
 
-    static fromJS(data: any): Pagination {
+    static fromJS(data: any): Contact {
         data = typeof data === 'object' ? data : {};
-        let result = new Pagination();
+        let result = new Contact();
         result.init(data);
         return result;
     }
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["skip"] = this.skip;
-        data["take"] = this.take;
-        data["totalItems"] = this.totalItems;
+        data["name"] = this.name;
+        data["phone"] = this.phone;
+        data["email"] = this.email;
         return data; 
     }
 }
 
-export interface IPagination {
-    skip: number;
-    take: number;
-    totalItems: number;
+export interface IContact {
+    name?: string | undefined;
+    phone?: string | undefined;
+    email?: string | undefined;
 }
 
 export abstract class Enumeration implements IEnumeration {

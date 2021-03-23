@@ -1,10 +1,13 @@
-﻿using ClinicalTrialsChallengeApi.Infrastructure.Dto;
+﻿using ClinicalTrialsChallengeApi.Domain.Model.Notification;
+using ClinicalTrialsChallengeApi.Domain.UseCase;
+using ClinicalTrialsChallengeApi.Infrastructure.Dto;
 using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
 using ClinicalTrialsChallengeApi.Infrastructure.Dto.Response;
 using ClinicalTrialsChallengeApi.Infrastructure.Repository;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -14,57 +17,29 @@ namespace ClinicalTrialsChallengeApi.Controllers
     [Route("[controller]")]
     public class FullStudyController : ControllerBase
     {
-        private readonly IFullStudyRepository _fullStudyRepository;
-        public FullStudyController(IFullStudyRepository fullStudyRepository)
+        private readonly IGetFullStudyUseCase _getFullStudyUseCase;
+        private readonly ISearchFullStudiesUseCase _searchFullStudiesUseCase;
+        public FullStudyController(IGetFullStudyUseCase getFullStudyUseCase, ISearchFullStudiesUseCase searchFullStudiesUseCase)
         {
-            _fullStudyRepository = fullStudyRepository;
+            _getFullStudyUseCase = getFullStudyUseCase;
+            _searchFullStudiesUseCase = searchFullStudiesUseCase;
         }
 
         [HttpGet]
-        public async Task<ActionResult<FullStudyDto>> GetAsync(string nctIdentifier)
+        public async Task<ActionResult<FullStudyDto>> GetAsync([RegularExpression("(NCT)\\d{8}")][Required] string nctIdentifier)
         {
-            if (string.IsNullOrWhiteSpace(nctIdentifier))
-                return BadRequest($"{nameof(nctIdentifier)} cannot be null or whitespace!");
+            var study = await _getFullStudyUseCase.GetFullStudyAsync(nctIdentifier);
 
-            FullStudyDto result;
-            try
-            {
-                result = await _fullStudyRepository.GetFullStudyAsync(nctIdentifier);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-
-
-            if (result is null)
-                return NotFound($"Study not found for NCT Identifier: {nctIdentifier}");
-
-            return result;
+            return study.Match<ActionResult<FullStudyDto>>(
+                study => study,
+                notFound => NotFound($"Study not found for NCT Identifier: {nctIdentifier}"));
         }
 
         [HttpGet]
         [Route("search")]
-        public async Task<ActionResult<PaginatedFullStudies>> SearchAsync([FromQuery] SearchRequestDto searchRequest)
+        public Task<PaginatedFullStudies> SearchAsync([FromQuery] SearchRequestDto searchRequest)
         {
-            PaginatedFullStudyDto results;
-            try
-            {
-                results = await _fullStudyRepository.GetPaginatedFullStudies(searchRequest.PaginationRequest.Skip, searchRequest.PaginationRequest.Take,
-                    searchRequest.Keywords, searchRequest.Location, searchRequest.Statuses, searchRequest.Gender);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-
-            if (results is null)
-                return new PaginatedFullStudies(new List<FullStudyViewDto>(), new Pagination(searchRequest.PaginationRequest.Skip, searchRequest.PaginationRequest.Take, 0));
-            var studies = results.FullStudies.Select(r => new FullStudyViewDto(r.ProtocolSection.IdentificationModule.NCTId,
-                r.ProtocolSection.IdentificationModule.BriefTitle, r.ProtocolSection.IdentificationModule.Organization.OrgFullName,
-                r.ProtocolSection.StatusModule.OverallStatus, r.ProtocolSection.DescriptionModule.BriefSummary,
-                r.ProtocolSection.ContactsLocationsModule?.LocationList?.Location.FirstOrDefault()));
-            return new PaginatedFullStudies(studies, new Pagination(results.Pagination.Skip, results.Pagination.Take, results.Pagination.TotalItems));
+            return _searchFullStudiesUseCase.GetPaginatedFullStudiesAsync(searchRequest);
         }
     }
 }

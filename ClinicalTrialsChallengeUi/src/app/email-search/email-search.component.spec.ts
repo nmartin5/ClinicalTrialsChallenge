@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ContactRequestComponent } from './contact-request.component';
+import { EmailSearchComponent } from './email-search.component';
 
-describe('ContactRequestComponent', () => {
-  let component: ContactRequestComponent;
-  let fixture: ComponentFixture<ContactRequestComponent>;
+describe('EmailSearchComponent', () => {
+  let component: EmailSearchComponent;
+  let fixture: ComponentFixture<EmailSearchComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ContactRequestComponent ]
+      declarations: [ EmailSearchComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(ContactRequestComponent);
+    fixture = TestBed.createComponent(EmailSearchComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

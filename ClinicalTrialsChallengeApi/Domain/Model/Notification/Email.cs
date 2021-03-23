@@ -1,19 +1,25 @@
-﻿using System;
+﻿using ClinicalTrialsChallengeApi.Infrastructure;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ClinicalTrialsChallengeApi.Domain.Model.Notification
 {
-    public class Email
+    public abstract class Email
     {
-        public IEnumerable<Recipient> Recipients => recipients;
-        private readonly List<Recipient> recipients = new List<Recipient>();
+        public Recipient Recipient { get; private set; }        
         public IEnumerable<Attachment> Attachments => attachments;
         private readonly List<Attachment> attachments = new List<Attachment>();
 
+        private readonly ISendEmailService _sendEmailService;
+        public Guid Id { get; private set; }
         public string Subject { get; private set; }
         public string Content { get; private set; }
 
-        public Email(string subject, string content)
+        public DateTime Sent { get; private set; }
+
+        public Email(string subject, string content, Recipient recipient, ISendEmailService sendEmailService)
         {
             if (string.IsNullOrWhiteSpace(subject))
                 throw new ArgumentException($"{nameof(subject)} is required!");
@@ -21,18 +27,33 @@ namespace ClinicalTrialsChallengeApi.Domain.Model.Notification
             if (string.IsNullOrWhiteSpace(content))
                 throw new ArgumentException($"{nameof(content)} is required!");
 
+            if (recipient is null)
+                throw new ArgumentException(($"{nameof(recipient)} is required!"));
+
+            Id = Guid.NewGuid();
+            Subject = subject;
+            Content = content;
+            Recipient = recipient;
+
+            _sendEmailService = sendEmailService;
+        }
+
+        protected Email(string subject, string content)
+        {
+            Id = Guid.NewGuid();
             Subject = subject;
             Content = content;
         }
 
-        public virtual void AddRecipient(Recipient recipient)
-        {
-            recipients.Add(recipient);
-        }
-
-        public virtual void AddAttachment(Attachment attachment)
+        public void AddAttachment(Attachment attachment)
         {
             attachments.Add(attachment);
+        }
+
+        public virtual Task SendAsync()
+        {
+            Sent = DateTime.UtcNow;
+            return _sendEmailService.SendNotificationAsync(this);
         }
     }
 }

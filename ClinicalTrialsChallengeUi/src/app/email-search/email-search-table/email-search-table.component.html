@@ -1,0 +1,42 @@
+<div class="mat-elevation-z8">
+  <div class="loading-shade" *ngIf="isLoadingResults">
+    <mat-spinner></mat-spinner>
+  </div>
+  <table mat-table class="full-width-table" aria-label="Notifications" [dataSource]="pagedEmails">
+    <!-- Time Sent Column -->
+    <ng-container matColumnDef="sent">
+      <th mat-header-cell *matHeaderCellDef>Time Sent</th>
+      <td mat-cell *matCellDef="let row">{{row.sent | date}}</td>
+    </ng-container>
+
+    <!-- Subject Column -->
+    <ng-container matColumnDef="subject">
+      <th mat-header-cell *matHeaderCellDef>Subject</th>
+      <td mat-cell *matCellDef="let row">{{row.subject}}</td>
+    </ng-container>
+
+    <!-- Notification Type Column -->
+    <ng-container matColumnDef="notificationType">
+      <th mat-header-cell *matHeaderCellDef>Notification Type</th>
+      <td mat-cell *matCellDef="let row">{{getNotificationTypeName(row)}}</td>
+    </ng-container>
+
+    <!-- Attachment Count Column -->
+    <ng-container matColumnDef="attachmentCount">
+      <th mat-header-cell *matHeaderCellDef>Attachments</th>
+      <td mat-cell *matCellDef="let row">{{row.attachmentCount}}</td>
+    </ng-container>
+
+    <!-- Recipient Address Column -->
+    <ng-container matColumnDef="address">
+      <th mat-header-cell *matHeaderCellDef>Recipient Address</th>
+      <td mat-cell *matCellDef="let row">{{row.recipientAddress}}</td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <mat-paginator #paginator [length]="resultsLength" [pageIndex]="0" [pageSize]="10" [pageSizeOptions]="[5, 10, 25]">
+  </mat-paginator>
+</div>

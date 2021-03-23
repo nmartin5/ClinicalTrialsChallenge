@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 
 namespace ClinicalTrialsChallengeApi.Domain.UseCase
 {
-    public interface ISendContactUseCase
+    public interface ISendNotificationUseCase
     {
-        Task<OneOf<Success, NotFound>> SendContact(ContactRequest request);
+        Task<OneOf<Success, NotFound>> SendNotification(NotificationRequest request);
     }
 }

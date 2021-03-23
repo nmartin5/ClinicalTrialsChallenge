@@ -1,13 +1,10 @@
 ﻿using ClinicalTrialsChallengeApi.Configuration;
 using ClinicalTrialsChallengeApi.Domain.Model.Notification;
 using ClinicalTrialsChallengeApi.Exceptions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OneOf.Types;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -22,7 +19,7 @@ namespace ClinicalTrialsChallengeApi.Infrastructure
             _emailOptions = sendGridOptions.Value;
         }
         public async Task SendNotificationAsync(Email notification)
-        {            
+        {
             var client = new SendGridClient(_emailOptions.ApiKey);
             var msg = BuildMessage(notification);
 
@@ -41,17 +38,11 @@ namespace ClinicalTrialsChallengeApi.Infrastructure
         {
             var from = new EmailAddress(_emailOptions.AuthorEmail, _emailOptions.AuthorName);
 
-            if (!notification.Recipients.Any())
-                throw new ArgumentException($"{nameof(notification.Recipients)} cannot be empty!");
+            if (notification.Recipient is null)
+                throw new ArgumentException($"{nameof(notification.Recipient)} cannot be null!");
 
-            if (notification.Recipients.Count() == 1)
-            {
-                var to = notification.Recipients.Select(r => new EmailAddress(r.Address, r.Name)).Single();
-                return MailHelper.CreateSingleEmail(from, to, notification.Subject, notification.Content, "");
-            }
-
-            var tos = notification.Recipients.Select(r => new EmailAddress(r.Address, r.Name)).ToList();
-            return MailHelper.CreateSingleEmailToMultipleRecipients(from, tos, notification.Subject, notification.Content, "");
+            var to = new EmailAddress(notification.Recipient.Address, notification.Recipient.Name);
+            return MailHelper.CreateSingleEmail(from, to, notification.Subject, notification.Content, "");
         }
     }
 }
