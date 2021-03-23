@@ -1,14 +1,9 @@
-﻿using ClinicalTrialsChallengeApi.Domain.Model.Notification;
+﻿using ClinicalTrialsChallengeApi.Domain.Model.Request;
+using ClinicalTrialsChallengeApi.Domain.Model.Response;
 using ClinicalTrialsChallengeApi.Domain.UseCase;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto.Response;
-using ClinicalTrialsChallengeApi.Infrastructure.Repository;
+using ClinicalTrialsChallengeApi.Infrastructure.Client.Dto;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ClinicalTrialsChallengeApi.Controllers

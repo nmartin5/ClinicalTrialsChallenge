@@ -1,17 +1,14 @@
 using ClinicalTrialsChallengeApi.Configuration;
 using ClinicalTrialsChallengeApi.Configuration.Installer;
 using ClinicalTrialsChallengeApi.Domain.Factory;
-using ClinicalTrialsChallengeApi.Domain.UseCase;
 using ClinicalTrialsChallengeApi.Infrastructure;
 using ClinicalTrialsChallengeApi.Infrastructure.Client;
-using ClinicalTrialsChallengeApi.Infrastructure.Persistence;
 using ClinicalTrialsChallengeApi.Infrastructure.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Reflection;
 
 namespace ClinicalTrialsChallengeApi
 {

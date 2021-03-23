@@ -1,9 +1,10 @@
 ﻿using ClinicalTrialsChallengeApi.Domain.Model.Notification;
+using ClinicalTrialsChallengeApi.Domain.Model.Request;
+using ClinicalTrialsChallengeApi.Domain.Model.Response;
 using ClinicalTrialsChallengeApi.Domain.UseCase;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto.Response;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace ClinicalTrialsChallengeApi.Controllers
@@ -24,7 +25,7 @@ namespace ClinicalTrialsChallengeApi.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Send(NotificationRequest request)
+        public async Task<ActionResult> Send([Required]NotificationRequest request)
         {
             var sendContactResult = await _sendNotificationUseCase.SendNotification(request);
             return sendContactResult.Match<ActionResult>(
@@ -34,7 +35,7 @@ namespace ClinicalTrialsChallengeApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<Email>> Get(Guid emailId)
+        public async Task<ActionResult<Email>> Get([Required]Guid emailId)
         {
             var emailResult = await _getEmailUseCase.GetEmailAsync(emailId);
 

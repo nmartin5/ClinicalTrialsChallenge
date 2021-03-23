@@ -1,7 +1,7 @@
 ﻿using ClinicalTrialsChallengeApi.Domain.Factory;
 using ClinicalTrialsChallengeApi.Domain.Model.Notification;
+using ClinicalTrialsChallengeApi.Domain.Model.Request;
 using ClinicalTrialsChallengeApi.Exceptions;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
 using ClinicalTrialsChallengeApi.Infrastructure.Repository;
 using Microsoft.Extensions.Logging;
 using OneOf;

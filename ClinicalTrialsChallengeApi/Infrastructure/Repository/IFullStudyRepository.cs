@@ -1,4 +1,4 @@
-﻿using ClinicalTrialsChallengeApi.Infrastructure.Dto;
+﻿using ClinicalTrialsChallengeApi.Infrastructure.Client.Dto;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

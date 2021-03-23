@@ -1,5 +1,5 @@
 ﻿using ClinicalTrialsChallengeApi.Infrastructure.Client;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto;
+using ClinicalTrialsChallengeApi.Infrastructure.Client.Dto;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,5 +1,4 @@
 ﻿using ClinicalTrialsChallengeApi.Infrastructure;
-using System.Collections.Generic;
 
 namespace ClinicalTrialsChallengeApi.Domain.Model.Notification
 {

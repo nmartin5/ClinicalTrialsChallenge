@@ -22,7 +22,12 @@ namespace ClinicalTrialsChallengeApi.Configuration.Installer
             }
             optionsBuilder.UseSqlite(connectionString);
 
-            services.AddScoped(_ => new ClinicalTrialsDbContext(optionsBuilder.Options));
+            services.AddScoped(_ => {
+                var context =  new ClinicalTrialsDbContext(optionsBuilder.Options);
+
+                context.Database.Migrate();
+                return context;
+            });
         }
     }
 }

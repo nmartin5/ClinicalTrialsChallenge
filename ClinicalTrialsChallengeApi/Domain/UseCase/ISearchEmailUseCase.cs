@@ -1,5 +1,5 @@
-﻿using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto.Response;
+﻿using ClinicalTrialsChallengeApi.Domain.Model.Request;
+using ClinicalTrialsChallengeApi.Domain.Model.Response;
 using System.Threading.Tasks;
 
 namespace ClinicalTrialsChallengeApi.Domain.UseCase

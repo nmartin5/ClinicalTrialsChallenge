@@ -1,6 +1,6 @@
 ﻿using ClinicalTrialsChallengeApi.Domain.Model.Notification;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto.Response;
+using ClinicalTrialsChallengeApi.Domain.Model.Request;
+using ClinicalTrialsChallengeApi.Domain.Model.Response;
 using ClinicalTrialsChallengeApi.Infrastructure.Repository;
 using System.Collections.Generic;
 using System.Linq;

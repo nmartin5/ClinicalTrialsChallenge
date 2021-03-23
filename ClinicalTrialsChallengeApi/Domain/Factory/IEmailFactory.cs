@@ -1,5 +1,5 @@
 ﻿using ClinicalTrialsChallengeApi.Domain.Model.Notification;
-using ClinicalTrialsChallengeApi.Infrastructure.Dto.Request;
+using ClinicalTrialsChallengeApi.Domain.Model.Request;
 using System.Threading.Tasks;
 
 namespace ClinicalTrialsChallengeApi.Domain.Factory
