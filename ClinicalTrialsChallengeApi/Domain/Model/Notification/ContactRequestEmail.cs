@@ -19,7 +19,7 @@ namespace ClinicalTrialsChallengeApi.Domain.Model.Notification
                 var vCard = vCardSerializer.SerializeVCard(contact);
                 var base64 = Convert.ToBase64String(vCard);
                 var attachmentName = contact.Name.Replace(" ", "");
-                AddAttachment(new Attachment(attachmentName, base64));
+                AddAttachment(new Attachment($"{attachmentName}.vcf", base64));
             }
         }
 
