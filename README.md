@@ -5,6 +5,7 @@
 ### Prerequisites
 
 - Node.js [LTS version works fine](https://nodejs.org/en/download/)
+- Angular CLI `npm install -g @angular/cli@11`
 - Visual Studio [Community or any version really](https://visualstudio.microsoft.com/downloads/)
 - [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0) (Included with Visual Studio)
 - SendGrid API Key [free tier available](https://sendgrid.com/docs/for-developers/sending-email/api-getting-started/)
